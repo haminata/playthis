@@ -45,11 +45,11 @@ public class PlayThisServer {
 
             try {
 
-                String path = "../playFile.html";
+                String path = "./playThisFile.html";
                 System.out.println("Current working directory is: " + System.getProperty("user.dir"));
                 System.out.println("Request query is: " + reqQuery);
                 System.out.println("Request hash is: " + reqFragment);
-                System.out.println("Path of boyFile is: " + path);
+                System.out.println("File path is: " + path);
 
 
 
