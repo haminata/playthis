@@ -16,8 +16,8 @@ import com.sun.net.httpserver.HttpServer;
 public class PlayThisServer {
 
     public static void main(String[] args) throws Exception {
-        Connection conn = DatabaseC.getConnection(args[0], args[1]);
-        
+        Connection conn = null;//DatabaseC.getConnection(args[0], args[1]);
+
         HttpServer server = HttpServer.create(new InetSocketAddress(2516), 0);
         server.createContext("/", new MyHandler(conn));
         server.setExecutor(null); // creates a default executor
@@ -35,39 +35,61 @@ public class PlayThisServer {
 
         @Override
         public void handle(HttpExchange t) throws IOException {
-            String response;
+            String response = "Not Found";
+            int statusCode = 404;
 
             String reqQuery = t.getRequestURI().getQuery();
             String reqFragment = t.getRequestURI().getFragment();
 
+            System.out.println("Request path is: " + t.getRequestURI().getPath());
+
+            System.out.println("Current working directory is: " + System.getProperty("user.dir"));
+            System.out.println("Request query is: " + reqQuery);
+            System.out.println("Request hash is: " + reqFragment);
+
             StringBuilder contentBuilder = new StringBuilder();
 
 
-            try {
-
-                String path = "./playThisFile.html";
-                System.out.println("Current working directory is: " + System.getProperty("user.dir"));
-                System.out.println("Request query is: " + reqQuery);
-                System.out.println("Request hash is: " + reqFragment);
-                System.out.println("File path is: " + path);
+            String path = t.getRequestURI().getPath();
 
 
+            if (path.equals("/home") || path.equals("/")) {
+                try {
+                    String filePath = "./playThisFile.html";
+                    System.out.println("File path is: " + filePath);
 
-                BufferedReader in = new BufferedReader(new FileReader(path));
-                String str;
 
-                while ((str = in.readLine()) != null) {
-                    contentBuilder.append(str);
+                    BufferedReader in = new BufferedReader(new FileReader(filePath));
+                    String str;
+
+                    while ((str = in.readLine()) != null) {
+                        contentBuilder.append(str);
+                    }
+                    in.close();
+                    response = contentBuilder.toString();
+
+                } catch (IOException e) {
+                    System.err.println("[Error] " + e);
+                    contentBuilder.append("[Error] cant load HTML from file: " + e);
                 }
-                in.close();
-
-            } catch (IOException e) {
-                System.err.println("[Error] " + e);
-                contentBuilder.append("[Error] cant load HTML from file: " + e);
+            } else if (path.equals("/search")) {
+                t.getResponseHeaders().add("Content-Type", "application/json");
+                response = "{\"hello\": \"world\"}";
+                statusCode = 200;
+            } else if (path.equals("/musicrooms")) {
+                response = "Got Music Rooms!";
+                statusCode = 200;
+            } else if(path.equals("/users")){
+                response = "{\"user\": {" +
+                "name\": \"Obialo\"," +
+                        "email\": \"example.com\"," +
+                        "age\": 17" +
+                "}}";
+                statusCode = 200;
+                //String jsonString = this.readFile("users.json");
             }
 
-            response = contentBuilder.toString();
-            t.sendResponseHeaders(200, response.length());
+            t.sendResponseHeaders(statusCode, response.length());
             OutputStream os = t.getResponseBody();
             os.write(response.getBytes());
             os.close();
