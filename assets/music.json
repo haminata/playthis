@@ -1,0 +1,24 @@
+{
+  "music_rooms": [
+    {
+      "title": "Hawa's graduation",
+      "date": "18/8/2019",
+      "status": "Closed"
+    },
+    {
+      "title": "Obi & Nkem's wedding",
+      "date": "29/9/2018",
+      "status": "Closed"
+    },
+    {
+      "title": "New Year's Eve ",
+      "date": "31/12/2018",
+      "status": "Closed"
+    },
+    {
+      "title": "Clara's Birthday",
+      "date": "23/6/2018",
+      "status": "Open"
+    }
+  ]
+}

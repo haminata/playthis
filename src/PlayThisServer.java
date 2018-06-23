@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.sql.Connection;
+import java.util.ArrayList;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -16,7 +17,7 @@ import com.sun.net.httpserver.HttpServer;
 public class PlayThisServer {
 
     public static void main(String[] args) throws Exception {
-        Connection conn = null;//DatabaseC.getConnection(args[0], args[1]);
+        Connection conn = null;
 
         HttpServer server = HttpServer.create(new InetSocketAddress(2516), 0);
         server.createContext("/", new MyHandler(conn));
@@ -33,6 +34,29 @@ public class PlayThisServer {
             this.conn = conn;
         }
 
+        public static String readFile(String filePath){
+            String fileData = null;
+            try {
+                System.out.println("File path is: " + filePath);
+
+
+                BufferedReader in = new BufferedReader(new FileReader(filePath));
+                String str;
+
+                StringBuilder contentBuilder = new StringBuilder();
+                while ((str = in.readLine()) != null) {
+                    contentBuilder.append(str);
+                }
+                in.close();
+
+                fileData = contentBuilder.toString();
+
+            } catch (IOException e) {
+                System.err.println("[Error] unable to read \""+ filePath + "\": " + e);
+            }
+            return fileData;
+        }
+
         @Override
         public void handle(HttpExchange t) throws IOException {
             String response = "Not Found";
@@ -47,46 +71,31 @@ public class PlayThisServer {
             System.out.println("Request query is: " + reqQuery);
             System.out.println("Request hash is: " + reqFragment);
 
-            StringBuilder contentBuilder = new StringBuilder();
-
-
             String path = t.getRequestURI().getPath();
 
-
             if (path.equals("/home") || path.equals("/")) {
-                try {
-                    String filePath = "./playThisFile.html";
-                    System.out.println("File path is: " + filePath);
-
-
-                    BufferedReader in = new BufferedReader(new FileReader(filePath));
-                    String str;
-
-                    while ((str = in.readLine()) != null) {
-                        contentBuilder.append(str);
-                    }
-                    in.close();
-                    response = contentBuilder.toString();
-
-                } catch (IOException e) {
-                    System.err.println("[Error] " + e);
-                    contentBuilder.append("[Error] cant load HTML from file: " + e);
-                }
+                String filePath = "./assets/playThisFile.html";
+                response = readFile(filePath);
             } else if (path.equals("/search")) {
                 t.getResponseHeaders().add("Content-Type", "application/json");
                 response = "{\"hello\": \"world\"}";
                 statusCode = 200;
             } else if (path.equals("/musicrooms")) {
-                response = "Got Music Rooms!";
+                response =readFile("./assets/music.json");
+                //r = {"music_room": DbModel.manyToJson(rooms)}
                 statusCode = 200;
             } else if(path.equals("/users")){
-                response = "{\"user\": {" +
-                "name\": \"Obialo\"," +
-                        "email\": \"example.com\"," +
-                        "age\": 17" +
-                "}}";
+                ArrayList<User> users = (new User()).all(User.class);
+                response = DbModel.manyToJson(users);//readFile("./assets/users.json");
                 statusCode = 200;
                 //String jsonString = this.readFile("users.json");
+            } else if(path.equals("/app.js")){
+                response = readFile("./assets/app.js");
+                statusCode = 200;
+            } else if(path.equals("/template_room.html")){
+                t.getResponseHeaders().add("Content-Type", "text/plain");
+                response = readFile("./assets/template_room.html");
+                statusCode = 200;
             }
 
             t.sendResponseHeaders(statusCode, response.length());
