@@ -36,21 +36,16 @@ public class PlayThisServer {
 
         public static String readFile(String filePath){
             String fileData = null;
-            try {
+            try (BufferedReader in = new BufferedReader(new FileReader(filePath))){
                 System.out.println("File path is: " + filePath);
-
-
-                BufferedReader in = new BufferedReader(new FileReader(filePath));
                 String str;
 
                 StringBuilder contentBuilder = new StringBuilder();
                 while ((str = in.readLine()) != null) {
                     contentBuilder.append(str);
                 }
-                in.close();
 
                 fileData = contentBuilder.toString();
-
             } catch (IOException e) {
                 System.err.println("[Error] unable to read \""+ filePath + "\": " + e);
             }

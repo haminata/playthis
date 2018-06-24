@@ -12,6 +12,8 @@ class User extends DbModel {
     public String name;
     public String gender;
 
+    public final static User shared = new User();
+
     public User(){
         super();
     }
