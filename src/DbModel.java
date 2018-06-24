@@ -1,3 +1,6 @@
+import com.mysql.cj.xdevapi.DbDoc;
+import com.mysql.cj.xdevapi.JsonParser;
+
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
@@ -6,6 +9,16 @@ import java.util.Date;
  * Created by haminata on 23/06/2018.
  */
 public abstract class DbModel {
+
+    public static final String ATTR_ID = "id";
+    public static final String ATTR_CREATED_AT = "created_at";
+    public static final String ATTR_UPDATED_AT = "updated_at";
+    public static final String ATTR_DELETED_AT = "deleted_at";
+    public static final String ATTR_ACTIVATED_AT = "activated_at";
+
+    public static final String SYNC_ERROR_NOT_FOUND_DB = "MySQL databse is missing column(s): ";
+    public static final String SYNC_ERROR_NOT_FOUND_JAVA = "Java source code is missing attribute(s): ";
+    public static final String SYNC_ERROR_MISMATCH_DATA_TYPE = "Column data types are out of sync: ";
 
     private static final String DEFAULT_DATABASE = "ptdev";
     private static Connection conn = null;
@@ -82,11 +95,6 @@ public abstract class DbModel {
         return json.toString();
     }
 
-    public boolean save(){
-
-        return false;
-    }
-
     public HashMap<String, String> getValidation(){
         return new HashMap<>();
     }
@@ -95,11 +103,37 @@ public abstract class DbModel {
     public abstract HashMap<String, AttributeType> getAttributes();
 
     public void setData(ResultSet resultSet) throws SQLException {
-        this.createdAt = resultSet.getDate("created_at");
-        this.updatedAt = resultSet.getDate("updated_at");
-        this.deletedAt = resultSet.getDate("deleted_at");
-        this.activatedAt = resultSet.getDate("activated_at");
-        this.id = resultSet.getInt("id");
+        this.createdAt = resultSet.getDate(ATTR_CREATED_AT);
+        this.updatedAt = resultSet.getDate(ATTR_UPDATED_AT);
+        this.deletedAt = resultSet.getDate(ATTR_DELETED_AT);
+        this.activatedAt = resultSet.getDate(ATTR_ACTIVATED_AT);
+        this.id = resultSet.getInt(ATTR_ID);
+    }
+
+    public void setData(DbDoc json){
+        System.out.println("[" + getClass().getSimpleName() + "#setData] json: " + json);
+
+    }
+
+    public static <T extends DbModel> T create(Class<T> modelClass, DbDoc json, Boolean save){
+        T newInst;
+        try {
+            newInst = modelClass.newInstance();
+            newInst.setData(json);
+
+            if(save) newInst.save();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            newInst = null;
+        }
+
+        return newInst;
+    }
+
+    public boolean save(){
+
+        return false;
     }
 
     public boolean isValid(){
@@ -168,7 +202,7 @@ public abstract class DbModel {
 
             query += ";";
 
-            System.out.println("[" + clsName + ".find] submitting query: " + query);
+            System.out.println("[" + clsName + "#find] submitting query: " + query);
             rs = stmt.executeQuery(query);
 
             while (rs.next()) {
@@ -178,7 +212,7 @@ public abstract class DbModel {
             }
 
         } catch (Exception err) {
-            System.err.println("[" + clsName + ".find] error: " + err);
+            System.err.println("[" + clsName + "#find] error: " + err);
         }
         return models;
     }
@@ -190,14 +224,16 @@ public abstract class DbModel {
 
     public Object getValue(String attributeName) {
         switch (attributeName) {
-            case "created_at":
+            case ATTR_CREATED_AT:
                 return this.createdAt;
-            case "updated_at":
+            case ATTR_UPDATED_AT:
                 return this.updatedAt;
-            case "deleted_at":
+            case ATTR_DELETED_AT:
                 return this.deletedAt;
-            case "activated_at":
+            case ATTR_ACTIVATED_AT:
                 return this.activatedAt;
+            case ATTR_ID:
+                return this.getId();
             default:
                 return null;
         }
@@ -206,11 +242,11 @@ public abstract class DbModel {
     public HashMap<String, AttributeType> getResolvedAttributes(){
         HashMap<String, AttributeType> attrs = getAttributes();
         attrs = attrs == null ? new HashMap<>() : attrs;
-        attrs.put("id", AttributeType.INTEGER);
-        attrs.put("created_at", AttributeType.DATE);
-        attrs.put("updated_at", AttributeType.DATE);
-        attrs.put("deleted_at", AttributeType.DATE);
-        attrs.put("activated_at", AttributeType.DATE);
+        attrs.put(ATTR_ID, AttributeType.INTEGER);
+        attrs.put(ATTR_CREATED_AT, AttributeType.DATE);
+        attrs.put(ATTR_UPDATED_AT, AttributeType.DATE);
+        attrs.put(ATTR_ACTIVATED_AT, AttributeType.DATE);
+        attrs.put(ATTR_DELETED_AT, AttributeType.DATE);
 
         return attrs;
     }
@@ -224,9 +260,9 @@ public abstract class DbModel {
         Set<String> absentServer = new HashSet<>();
 
         HashMap<String, Set<String>> validation = new HashMap<String, Set<String>>() {{
-            put("absentServer", absentServer);
-            put("absentDb", absentDb);
-            put("typeMismatch", typeMismatch);
+            put(SYNC_ERROR_NOT_FOUND_JAVA, absentServer);
+            put(SYNC_ERROR_NOT_FOUND_DB, absentDb);
+            put(SYNC_ERROR_MISMATCH_DATA_TYPE, typeMismatch);
         }};
 
         try (Statement stmt = getConnection().createStatement()){
@@ -401,6 +437,7 @@ public abstract class DbModel {
         //User.findOne(User.class)
 
         System.out.println("User: " + manyToJson(users));
+        System.out.println("User (Json): " + JsonParser.parseDoc(users.get(0).toJson()).getClass());
         System.out.println("Convert: " + AttributeType.convert("1", AttributeType.INTEGER.cls()).getClass());
 
         //Song song = (new Song()).findOne(Song.class, Where.EMPTY);
