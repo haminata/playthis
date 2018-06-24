@@ -20,11 +20,13 @@ public abstract class DbModel {
         }
     }
 
+    public static final String JDBC_DRIVER_CLASSPATH = "com.mysql.cj.jdbc.Driver";
+
     public Connection getConnection() {
         try {
             if (conn == null || conn.isClosed()) {
                 System.out.println("[getConnection] creating new connection...");
-                conn = createConnection("ptdev", "Password@");
+                conn = createConnection("ptdev", "ptdev", "Password@");
             }
         } catch (Exception err) {
             System.err.println("[getConnection] error creating connection: " + err);
@@ -33,11 +35,10 @@ public abstract class DbModel {
         return conn;
     }
 
-    public static Connection createConnection(String user, String password) {
+    public static Connection createConnection(String database, String user, String password) {
         try {
-            String driver = "com.mysql.cj.jdbc.Driver";
-            String url = "jdbc:mysql://localhost:3306/ptdev?useSSL=false";
-            Class.forName(driver);
+            String url = "jdbc:mysql://localhost:3306/" + database + "?useSSL=false";
+            Class.forName(JDBC_DRIVER_CLASSPATH);
 
             return DriverManager.getConnection(url, user, password);
         } catch (Exception err) {
@@ -46,8 +47,6 @@ public abstract class DbModel {
 
         return null;
     }
-
-    //public ;
 
     public abstract String toJson();
 
@@ -63,32 +62,37 @@ public abstract class DbModel {
         return this.id;
     }
 
-    public <T extends DbModel> ArrayList<T> findAll(Class<T> entityClass, HashMap<String, String> where) {
-        return this.find(entityClass, where, null);
+    public static <T extends DbModel> ArrayList<T> findAll(Class<T> entityClass, HashMap<String, String> where) {
+        return find(entityClass, where, null);
     }
 
-    public <T extends DbModel> ArrayList<T> all(Class<T> entityClass) {
-        return this.find(entityClass, Where.EMPTY, null);
+    public static <T extends DbModel> ArrayList<T> all(Class<T> entityClass) {
+        return find(entityClass, Where.EMPTY, null);
     }
 
-    public <T extends DbModel> T findOne(Class<T> entityClass, HashMap<String, String> where) {
-        ArrayList<T> models = this.find(entityClass, where, 1);
+    public static <T extends DbModel> T findOne(Class<T> entityClass, HashMap<String, String> where) {
+        ArrayList<T> models = find(entityClass, where, 1);
         return models.isEmpty() ? null : models.get(0);
     }
 
-    public <T extends DbModel> ArrayList<T> find(Class<T> entityClass, HashMap<String, String> where, Integer limit) {
+    public static <T extends DbModel> ArrayList<T> find(Class<T> entityClass, HashMap<String, String> where, Integer limit) {
         where = where == null ? Where.EMPTY : where;
         ArrayList<T> models = new ArrayList<>();
+        String clsName = entityClass.getSimpleName();
+        System.out.println("[" + clsName + "] find: " + where);
+        try {
+            T fakeThis = entityClass.newInstance();
+            Statement stmt = fakeThis.getConnection().createStatement();
+            ResultSet rs;
 
-        System.out.println("[" + this.getClass().getSimpleName() + "] find: " + where);
-        try (Statement stmt = getConnection().createStatement()){
-            String tableName = getTableName();
+            String tableName = fakeThis.getTableName();
 
-            if (tableName == null) throw new Exception("Table name can not be null: " + getClass().getCanonicalName());
+            if (tableName == null)
+                throw new Exception("Table name can not be null: " + fakeThis.getClass().getCanonicalName());
 
             String query = "SELECT * FROM " + tableName;
 
-            HashMap<String, String> attrs = this.getAttributes();
+            HashMap<String, String> attrs = fakeThis.getAttributes();
             attrs = attrs == null ? new HashMap<>() : attrs;
 
             for (Map.Entry<String, String> e : attrs.entrySet()) {
@@ -107,11 +111,10 @@ public abstract class DbModel {
                 }
             }
 
-            if (limit != null && limit > 0) query += " LIMIT " + limit;
-            query += ";";
+            if (limit != null && limit > 0) query += " LIMIT " + limit + ";";
 
-            System.out.println("[" + this.getClass().getSimpleName() + "#find] submitting query: " + query);
-            ResultSet rs = stmt.executeQuery(query);
+            System.out.println("[" + clsName + ".find] submitting query: " + query);
+            rs = stmt.executeQuery(query);
 
             while (rs.next()) {
                 T obj = entityClass.newInstance();
@@ -120,7 +123,7 @@ public abstract class DbModel {
             }
 
         } catch (Exception err) {
-            System.err.println("[" + this.getClass().getSimpleName() + "#find] error: " + err);
+            System.err.println("[" + clsName + ".find] error: " + err);
         }
         return models;
     }
@@ -135,11 +138,10 @@ public abstract class DbModel {
             put("gender", "m");
         }};
 
-        System.out.println("User: " + User.shared.syncTable());
+        ArrayList<User> users = User.findAll(User.class, where);
+        //User.findOne(User.class)
 
-        ArrayList<User> users = User.shared.findAll(User.class, where);
-
-
+        System.out.println("Check \"" + User.class.getSimpleName() + "\" in sync: " + User.shared.syncTable());
         System.out.println("User: " + manyToJson(users));
 
         //Song song = (new Song()).findOne(Song.class, Where.EMPTY);
