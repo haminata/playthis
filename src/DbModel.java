@@ -1,5 +1,6 @@
 import java.sql.*;
 import java.util.*;
+import java.util.Date;
 
 /**
  * Created by haminata on 23/06/2018.
@@ -10,6 +11,7 @@ public abstract class DbModel {
     private static Connection conn = null;
     protected Integer id;
     private static final HashMap<String, Class<? extends DbModel>> CLASSES = new HashMap<>();
+    public Date createdAt, updatedAt, deletedAt, activatedAt;
 
     public DbModel() {
         Class cls = getClass();
@@ -48,18 +50,69 @@ public abstract class DbModel {
         return null;
     }
 
-    public abstract String toJson();
+    public String toJson() {
+        HashMap<String, AttributeType> attrs = getResolvedAttributes();
+        attrs = attrs == null ? new HashMap<>() : attrs;
 
-    public abstract void save();
+        StringBuilder json = new StringBuilder("{");
+
+        int position = 0;
+        for (Map.Entry<String, AttributeType> entry: attrs.entrySet()){
+            position++;
+
+            json.append("\"");
+            json.append(entry.getKey());
+            json.append("\"");
+
+            json.append(": ");
+
+            Object value = this.getValue(entry.getKey());
+            AttributeType attrType = entry.getValue();
+            boolean isString = attrType.dataType.equals(AttributeType.DATA_TYPE_STRING);
+
+            if(value != null && isString) json.append("\"");
+
+            json.append(value);
+
+            if(value != null && isString) json.append("\"");
+            if(position != attrs.size()) json.append(", \n");
+        }
+
+        json.append("}");
+        return json.toString();
+    }
+
+    public boolean save(){
+
+        return false;
+    }
+
+    public HashMap<String, String> getValidation(){
+        return new HashMap<>();
+    }
 
     public abstract String getTableName();
+    public abstract HashMap<String, AttributeType> getAttributes();
 
-    public abstract HashMap<String, String> getAttributes();
+    public void setData(ResultSet resultSet) throws SQLException {
+        this.createdAt = resultSet.getDate("created_at");
+        this.updatedAt = resultSet.getDate("updated_at");
+        this.deletedAt = resultSet.getDate("deleted_at");
+        this.activatedAt = resultSet.getDate("activated_at");
+        this.id = resultSet.getInt("id");
+    }
 
-    public abstract void setData(ResultSet resultSet) throws SQLException;
+    public boolean isValid(){
+        HashMap<String, String> val = getValidation();
+        return val == null || val.isEmpty();
+    }
 
     public Integer getId() {
         return this.id;
+    }
+
+    public boolean isNew() {
+        return this.id == null || this.id < 1;
     }
 
     public static <T extends DbModel> ArrayList<T> findAll(Class<T> entityClass, HashMap<String, String> where) {
@@ -80,30 +133,30 @@ public abstract class DbModel {
         ArrayList<T> models = new ArrayList<>();
         String clsName = entityClass.getSimpleName();
         System.out.println("[" + clsName + "] find: " + where);
+
         try {
-            T fakeThis = entityClass.newInstance();
-            Statement stmt = fakeThis.getConnection().createStatement();
+            T inst = entityClass.newInstance();
+            Statement stmt = inst.getConnection().createStatement();
             ResultSet rs;
 
-            String tableName = fakeThis.getTableName();
+            String tableName = inst.getTableName();
 
             if (tableName == null)
-                throw new Exception("Table name can not be null: " + fakeThis.getClass().getCanonicalName());
+                throw new Exception("Table name can not be null: " + inst.getClass().getCanonicalName());
 
             String query = "SELECT * FROM " + tableName;
 
-            HashMap<String, String> attrs = fakeThis.getAttributes();
-            attrs = attrs == null ? new HashMap<>() : attrs;
+            HashMap<String, AttributeType> attrs = inst.getResolvedAttributes();
 
-            for (Map.Entry<String, String> e : attrs.entrySet()) {
+            for (Map.Entry<String, AttributeType> e : attrs.entrySet()) {
 
                 if (!where.containsKey(e.getKey())) continue;
 
-                if (!query.contains(" WHERE")) query += " WHERE";
+                if (query.endsWith(tableName) && !query.contains(" WHERE")) query += " WHERE";
 
                 String value = where.get(e.getKey());
-                switch (e.getValue()) {
-                    case AttributeType.STRING:
+                switch (e.getValue().dataType) {
+                    case AttributeType.DATA_TYPE_STRING:
                         query += " " + e.getKey() + "=\"" + value + "\"";
                         break;
                     default:
@@ -111,7 +164,9 @@ public abstract class DbModel {
                 }
             }
 
-            if (limit != null && limit > 0) query += " LIMIT " + limit + ";";
+            if (limit != null && limit > 0) query += " LIMIT " + limit;
+
+            query += ";";
 
             System.out.println("[" + clsName + ".find] submitting query: " + query);
             rs = stmt.executeQuery(query);
@@ -133,32 +188,36 @@ public abstract class DbModel {
         return this.getClass().getSimpleName() + "(id=" + getId() + ")";
     }
 
-    public static void main(String[] args) {
-        Where where = new Where() {{
-            put("gender", "m");
-        }};
+    public Object getValue(String attributeName) {
+        switch (attributeName) {
+            case "created_at":
+                return this.createdAt;
+            case "updated_at":
+                return this.updatedAt;
+            case "deleted_at":
+                return this.deletedAt;
+            case "activated_at":
+                return this.activatedAt;
+            default:
+                return null;
+        }
+    }
 
-        ArrayList<User> users = User.findAll(User.class, where);
-        //User.findOne(User.class)
+    public HashMap<String, AttributeType> getResolvedAttributes(){
+        HashMap<String, AttributeType> attrs = getAttributes();
+        attrs = attrs == null ? new HashMap<>() : attrs;
+        attrs.put("id", AttributeType.INTEGER);
+        attrs.put("created_at", AttributeType.DATE);
+        attrs.put("updated_at", AttributeType.DATE);
+        attrs.put("deleted_at", AttributeType.DATE);
+        attrs.put("activated_at", AttributeType.DATE);
 
-        System.out.println("Check \"" + User.class.getSimpleName() + "\" in sync: " + User.shared.syncTable());
-        System.out.println("User: " + manyToJson(users));
-
-        //Song song = (new Song()).findOne(Song.class, Where.EMPTY);
-        //System.out.println("Song is: " + song);
+        return attrs;
     }
 
     public boolean syncTable() {
-        String table = getTableName();
-        String schema = DEFAULT_DATABASE;
 
-        String query = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS as cols, INFORMATION_SCHEMA.TABLES as tbls " +
-                "where tbls.table_schema=\"" + schema + "\" AND tbls.table_schema=cols.table_schema AND " +
-                "tbls.table_name=\"" + table + "\" AND tbls.table_name=cols.table_name;";
-
-        HashMap<String, String> attrs = getAttributes();
-        attrs = attrs == null ? new HashMap<>() : attrs;
-        attrs.put("id", AttributeType.INTEGER);
+        HashMap<String, AttributeType> attrs = getResolvedAttributes();
 
         Set<String> absentDb = ((HashMap<String, String>) attrs.clone()).keySet();
         Set<String> typeMismatch = ((HashMap<String, String>) attrs.clone()).keySet();
@@ -171,6 +230,13 @@ public abstract class DbModel {
         }};
 
         try (Statement stmt = getConnection().createStatement()){
+
+            String table = getTableName();
+
+            String query = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS as cols, INFORMATION_SCHEMA.TABLES as tbls " +
+                    "where tbls.table_schema=\"" + DEFAULT_DATABASE + "\" AND tbls.table_schema=cols.table_schema AND " +
+                    "tbls.table_name=\"" + table + "\" AND tbls.table_name=cols.table_name;";
+
             ResultSet rs = stmt.executeQuery(query);
 
             HashMap<String, String> dbColTypes = new HashMap<>();
@@ -186,15 +252,7 @@ public abstract class DbModel {
                 }
 
                 absentDb.remove(col);
-                boolean typesMatch = false;
-
-                switch (attrs.get(col)) {
-                    case AttributeType.STRING:
-                        typesMatch = dataType.equals("varchar");
-                        break;
-                    case AttributeType.INTEGER:
-                        typesMatch = dataType.equals("int");
-                }
+                boolean typesMatch = attrs.get(col).toSqlDataType().equals(dataType);
 
                 if (typesMatch) typeMismatch.remove(col);
             }
@@ -223,15 +281,12 @@ public abstract class DbModel {
         return false;
     }
 
-    public boolean createColumn(String colName, String dataType) {
-        String query = "ALTER TABLE " + getTableName() + " ADD COLUMN " + colName + " " + AttributeType.toSql(dataType) + ";";
+    public boolean createColumn(String colName, AttributeType attrType) {
+        String query = "ALTER TABLE " + getTableName() + " ADD COLUMN " + colName + " " + attrType.toSql() + ";";
         System.out.println("[createColumn] query: " + query);
 
-        try {
-            Statement stmt = getConnection().createStatement();
+        try (Statement stmt = getConnection().createStatement()){
             stmt.execute(query);
-            stmt.close();
-
             return true;
         }catch (Exception e){
             System.err.println("[createColumn] error: " + e);
@@ -255,26 +310,101 @@ public abstract class DbModel {
     }
 
     static class AttributeType {
-        public static final String STRING = "string";
-        public static final String DATE = "datetime";
-        public static final String INTEGER = "integer";
+        public static final String DATA_TYPE_STRING = "string";
+        public static final String DATA_TYPE_DATE = "datetime";
+        public static final String DATA_TYPE_INTEGER = "integer";
 
-        public static String toSql(String dataType) {
-            switch (dataType) {
-                case STRING:
-                    return "VARCHAR(15)";
-                case INTEGER:
+        public static final Class DATA_TYPE_STRING_CLASS = String.class;
+        public static final Class DATA_TYPE_DATE_CLASS = Date.class;
+        public static final Class DATA_TYPE_INTEGER_CLASS = Integer.class;
+
+        public static final AttributeType TEXT = new AttributeType(DATA_TYPE_STRING, 45);
+        public static final AttributeType STRING = new AttributeType(DATA_TYPE_STRING, 15);
+        public static final AttributeType CHARACTER = new AttributeType(DATA_TYPE_STRING, 1);
+        public static final AttributeType DATE = new AttributeType(DATA_TYPE_DATE);
+        public static final AttributeType INTEGER = new AttributeType(DATA_TYPE_INTEGER);
+
+        public Integer dataLength;
+        public String dataType;
+
+        public AttributeType(String attrType, Integer dataLength){
+            this.dataLength = dataLength;
+            this.dataType = attrType;
+        }
+
+        public AttributeType(String attrType){
+            this.dataLength = null;
+            this.dataType = attrType;
+        }
+
+        public Class cls(){
+            switch(this.dataType){
+                case DATA_TYPE_DATE:
+                    return DATA_TYPE_DATE_CLASS;
+                case DATA_TYPE_INTEGER:
+                    return DATA_TYPE_INTEGER_CLASS;
+                case DATA_TYPE_STRING:
+                    return DATA_TYPE_STRING_CLASS;
+            }
+            return null;
+        }
+
+        public static <T> T convert(String value, Class<T> dataTypeClass){
+            if(dataTypeClass.equals(DATA_TYPE_DATE_CLASS)){
+                return null;
+            }else if(dataTypeClass.equals(DATA_TYPE_INTEGER_CLASS)){
+                return dataTypeClass.cast(Integer.parseInt(value));
+            }else if(dataTypeClass.equals(DATA_TYPE_STRING_CLASS)){
+                return dataTypeClass.cast(value);
+            }
+            return null;
+        }
+
+        public String toSql() {
+            switch (this.dataType) {
+                case DATA_TYPE_STRING:
+                    return dataLength == null ? "VARCHAR(15)" : "VARCHAR(" + dataLength + ")";
+                case DATA_TYPE_INTEGER:
                     return "INT";
-                case DATE:
+                case DATA_TYPE_DATE:
                     return "DATETIME";
                 default:
-                    return dataType;
+                    return dataType.toUpperCase();
+            }
+        }
+
+        public String toSqlDataType() {
+            switch (this.dataType) {
+                case DATA_TYPE_STRING:
+                    return "varchar";
+                case DATA_TYPE_INTEGER:
+                    return "int";
+                case DATA_TYPE_DATE:
+                    return "datetime";
+                default:
+                    return dataType.toLowerCase();
             }
         }
     }
 
     static class Where extends HashMap<String, String> {
         public static final Where EMPTY = new Where();
+    }
+
+    public static void main(String[] args) {
+        Where where = new Where() {{
+            put("gender", "m");
+        }};
+
+        System.out.println("Check \"" + User.class.getSimpleName() + "\" table in sync: " + User.shared.syncTable());
+        ArrayList<User> users = User.all(User.class);
+        //User.findOne(User.class)
+
+        System.out.println("User: " + manyToJson(users));
+        System.out.println("Convert: " + AttributeType.convert("1", AttributeType.INTEGER.cls()).getClass());
+
+        //Song song = (new Song()).findOne(Song.class, Where.EMPTY);
+        //System.out.println("Song is: " + song);
     }
 }
 

@@ -80,7 +80,7 @@ public class PlayThisServer {
                 //r = {"music_room": DbModel.manyToJson(rooms)}
                 statusCode = 200;
             } else if(path.equals("/users")){
-                ArrayList<User> users = (new User()).all(User.class);
+                ArrayList<User> users = User.all(User.class);
                 response = DbModel.manyToJson(users);//readFile("./assets/users.json");
                 statusCode = 200;
                 //String jsonString = this.readFile("users.json");
