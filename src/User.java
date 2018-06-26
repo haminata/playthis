@@ -15,7 +15,7 @@ class User extends DbModel {
     public final static User shared = new User();
 
     @Override
-    public String getTableName() {
+    public String getModelNamePlural() {
         return "users";
     }
 
@@ -39,6 +39,11 @@ class User extends DbModel {
     }
 
     public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getModelName() {
         return name;
     }
 
