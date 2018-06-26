@@ -76,12 +76,13 @@ public class PlayThisServer {
                 response = "{\"hello\": \"world\"}";
                 statusCode = 200;
             } else if (path.equals("/musicrooms")) {
-                response =readFile("./assets/music.json");
-                //r = {"music_room": DbModel.manyToJson(rooms)}
+                ArrayList<Musicroom> musicroom = Musicroom.all(Musicroom.class);
+                response = DbModel.manyToJson(musicroom);
+
                 statusCode = 200;
             } else if(path.equals("/users")){
                 ArrayList<User> users = User.all(User.class);
-                response = DbModel.manyToJson(users);//readFile("./assets/users.json");
+                response = DbModel.manyToJson(users);
                 statusCode = 200;
                 //String jsonString = this.readFile("users.json");
             } else if(path.equals("/app.js")){

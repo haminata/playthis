@@ -102,12 +102,26 @@ public abstract class DbModel {
         return new HashMap<>();
     }
 
+    /**
+     * Forces every class to provide the plural form of the model name
+     * @return
+     */
     public abstract String getModelNamePlural();
 
+    /**
+     * This method collects the model name provided in the class and converts it to lower case
+     * The table name of the model is always the plural form of the model name
+     * @return
+     */
     public String getTableName(){
         return this.getModelNamePlural().toLowerCase();
     }
 
+    /**
+     * String = to the key then you provide the attribute type
+     *
+     * @return
+     */
     public abstract HashMap<String, AttributeType> getAttributes();
 
     public void setData(ResultSet resultSet) throws SQLException {
@@ -336,6 +350,10 @@ public abstract class DbModel {
         }
     }
 
+    /**
+     * This methods includes all attributes that are common to all tables
+     * @return
+     */
     public HashMap<String, AttributeType> getResolvedAttributes(){
         HashMap<String, AttributeType> attrs = getAttributes();
         attrs = attrs == null ? new HashMap<>() : attrs;
@@ -348,6 +366,11 @@ public abstract class DbModel {
         return attrs;
     }
 
+
+    /**
+     *
+     * @return
+     */
     public boolean syncTable() {
 
         HashMap<String, AttributeType> attrs = getResolvedAttributes();
@@ -464,6 +487,9 @@ public abstract class DbModel {
         return jsonArray.toString();
     }
 
+    /**
+     * As sql and java define they type different, this class handles the conversion between the two
+     */
     static class AttributeType {
         public static final String DATA_TYPE_STRING = "string";
         public static final String DATA_TYPE_DATE = "datetime";
@@ -473,8 +499,8 @@ public abstract class DbModel {
         public static final Class DATA_TYPE_DATE_CLASS = Date.class;
         public static final Class DATA_TYPE_INTEGER_CLASS = Integer.class;
 
-        public static final AttributeType TEXT = new AttributeType(DATA_TYPE_STRING, 45);
-        public static final AttributeType STRING = new AttributeType(DATA_TYPE_STRING, 15);
+        public static final AttributeType TEXT = new AttributeType(DATA_TYPE_STRING, 250);
+        public static final AttributeType STRING = new AttributeType(DATA_TYPE_STRING, 45);
         public static final AttributeType CHARACTER = new AttributeType(DATA_TYPE_STRING, 1);
         public static final AttributeType DATE = new AttributeType(DATA_TYPE_DATE);
         public static final AttributeType INTEGER = new AttributeType(DATA_TYPE_INTEGER);
@@ -547,21 +573,11 @@ public abstract class DbModel {
     }
 
     public static void main(String[] args) {
-        Where where = new Where() {{
-            put("gender", "m");
-        }};
+        User us = User.findOne(User.class, Where.EMPTY);
+        System.out.println(us.toJson());
 
-        System.out.println("Check \"" + User.class.getSimpleName() + "\" table in sync: " + User.shared.syncTable());
-        ArrayList<User> users = User.all(User.class);
-        User u = User.findOne(User.class, Where.EMPTY);
-
-
-        System.out.println("User: " + u.toJson());
-        u.gender = "M";
-        System.out.println("User save: " + u.save());
-        System.out.println("User save: " + u.toJson());
-        //System.out.println("User (Json): " + JsonParser.parseDoc(users.get(0).toJson()).getClass());
-        System.out.println("Convert: " + AttributeType.convert("1", AttributeType.INTEGER.cls()).getClass());
+        Musicroom room = new Musicroom();
+        room.syncTable();
 
         //Song song = (new Song()).findOne(Song.class, Where.EMPTY);
         //System.out.println("Song is: " + song);
