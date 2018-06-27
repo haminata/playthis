@@ -12,7 +12,7 @@ public class Musicroom extends DbModel {
 
     @Override
     public HashMap<String, AttributeType> getAttributes() {
-        return new HashMap<String, AttributeType>(){{
+        return new HashMap<String, AttributeType>() {{
             put("created_by", AttributeType.INTEGER);
             put("name", AttributeType.STRING);
         }};
@@ -20,14 +20,13 @@ public class Musicroom extends DbModel {
 
     @Override
     public Object getValue(String attributeName) {
-        switch (attributeName){
+        switch (attributeName) {
             case "created_by":
                 return this.createdBy;
             case "name":
                 return this.name;
-
             default:
-                return super.getValue(attributeName);
+                return null;
         }
     }
 

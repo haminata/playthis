@@ -63,9 +63,8 @@ class User extends DbModel {
                 return this.gender;
             case "password_hash":
                 return "[PASSWRD_HASH]";
-            default:
-                return super.getValue(attributeName);
         }
+        return null;
     }
 
 }

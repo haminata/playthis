@@ -1,3 +1,4 @@
+import com.mysql.cj.jdbc.exceptions.MysqlDataTruncation;
 import com.mysql.cj.xdevapi.DbDoc;
 
 import java.sql.*;
@@ -62,7 +63,7 @@ public abstract class DbModel {
         return null;
     }
 
-    public String getModelName(){
+    public String getModelName() {
         return getClass().getSimpleName();
     }
 
@@ -73,7 +74,7 @@ public abstract class DbModel {
         StringBuilder json = new StringBuilder("{");
 
         int position = 0;
-        for (Map.Entry<String, AttributeType> entry: attrs.entrySet()){
+        for (Map.Entry<String, AttributeType> entry : attrs.entrySet()) {
             position++;
 
             json.append("\"");
@@ -86,24 +87,25 @@ public abstract class DbModel {
             AttributeType attrType = entry.getValue();
             boolean isString = attrType.dataType.equals(AttributeType.DATA_TYPE_STRING);
 
-            if(value != null && isString) json.append("\"");
+            if (value != null && isString) json.append("\"");
 
             json.append(value);
 
-            if(value != null && isString) json.append("\"");
-            if(position != attrs.size()) json.append(", \n");
+            if (value != null && isString) json.append("\"");
+            if (position != attrs.size()) json.append(", \n");
         }
 
         json.append("}");
         return json.toString();
     }
 
-    public HashMap<String, String> getValidation(){
+    public HashMap<String, String> getValidation() {
         return new HashMap<>();
     }
 
     /**
      * Forces every class to provide the plural form of the model name
+     *
      * @return
      */
     public abstract String getModelNamePlural();
@@ -111,9 +113,10 @@ public abstract class DbModel {
     /**
      * This method collects the model name provided in the class and converts it to lower case
      * The table name of the model is always the plural form of the model name
+     *
      * @return
      */
-    public String getTableName(){
+    public String getTableName() {
         return this.getModelNamePlural().toLowerCase();
     }
 
@@ -124,6 +127,33 @@ public abstract class DbModel {
      */
     public abstract HashMap<String, AttributeType> getAttributes();
 
+    public HashMap<String, AttributeType> getDbAttributes() {
+        HashMap<String, AttributeType> dbColTypes = new HashMap<>();
+        try (Statement stmt = getConnection().createStatement()) {
+
+            String table = getTableName();
+
+            String query = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS as cols, INFORMATION_SCHEMA.TABLES as tbls " +
+                    "where tbls.table_schema=\"" + DEFAULT_DATABASE + "\" AND tbls.table_schema=cols.table_schema AND " +
+                    "tbls.table_name=\"" + table + "\" AND tbls.table_name=cols.table_name;";
+
+            ResultSet rs = stmt.executeQuery(query);
+
+            while (rs.next()) {
+                String col = rs.getString("COLUMN_NAME");
+                String dataType = rs.getString("DATA_TYPE");
+                Integer dataLength = rs.getInt("CHARACTER_MAXIMUM_LENGTH");
+                dbColTypes.put(col, new AttributeType(dataType, dataLength));
+            }
+
+
+        } catch (Exception e) {
+            System.err.println("[" + getClass().getSimpleName() + "] error: " + e);
+            e.printStackTrace();
+        }
+        return dbColTypes;
+    }
+
     public void setData(ResultSet resultSet) throws SQLException {
         this.createdAt = resultSet.getTimestamp(ATTR_CREATED_AT);
         this.updatedAt = resultSet.getTimestamp(ATTR_UPDATED_AT);
@@ -132,18 +162,18 @@ public abstract class DbModel {
         this.id = resultSet.getInt(ATTR_ID);
     }
 
-    public void setData(DbDoc json){
+    public void setData(DbDoc json) {
         System.out.println("[" + getClass().getSimpleName() + "#setData] json: " + json);
 
     }
 
-    public static <T extends DbModel> T create(Class<T> modelClass, DbDoc json, Boolean save){
+    public static <T extends DbModel> T create(Class<T> modelClass, DbDoc json, Boolean save) {
         T newInst;
         try {
             newInst = modelClass.newInstance();
             newInst.setData(json);
 
-            if(save) newInst.save();
+            if (save) newInst.save();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -153,7 +183,7 @@ public abstract class DbModel {
         return newInst;
     }
 
-    public boolean save(){
+    public boolean save() {
         StringBuilder qms = new StringBuilder();
         StringBuilder cols = new StringBuilder();
         StringBuilder updates = new StringBuilder();
@@ -162,8 +192,8 @@ public abstract class DbModel {
         HashMap<Integer, String> colIdxMap = new HashMap<>();
 
         int colIdx = 1;
-        for (String key: attrs.keySet()) {
-            if(key.equals(ATTR_ID)) continue;
+        for (String key : attrs.keySet()) {
+            if (key.equals(ATTR_ID)) continue;
 
             qms.append('?');
             cols.append(key);
@@ -173,7 +203,7 @@ public abstract class DbModel {
             updates.append('?');
 
             colIdxMap.put(colIdx, key);
-            if(colIdx != (attrs.size() - 1)){
+            if (colIdx != (attrs.size() - 1)) {
                 cols.append(',');
                 qms.append(',');
                 updates.append(',');
@@ -184,11 +214,11 @@ public abstract class DbModel {
 
         StringBuilder sql = new StringBuilder();
 
-        if(isNew()) {
+        if (isNew()) {
             sql.append("INSERT INTO " + getTableName() + " (" +
                     cols + ") VALUES (" +
                     qms + ");");
-        }else {
+        } else {
             sql.append("UPDATE ");
             sql.append(getTableName());
             sql.append(" SET ");
@@ -200,26 +230,27 @@ public abstract class DbModel {
             sql.append(";");
         }
 
-        try (PreparedStatement statement = getConnection().prepareStatement(sql.toString())){
+        if (this.createdAt == null) createdAt = new Date();
+        Date createdAt = this.createdAt;
+        PreparedStatement statement = null;
+
+        try {
+            statement = getConnection().prepareStatement(sql.toString());
             Date updatedAt = new Date();
-
-            if(this.createdAt == null) createdAt = new Date();
-            Date createdAt = this.createdAt;
-
             System.out.println("query: " + sql);
 
-            for (Map.Entry<Integer, String> colEntry: colIdxMap.entrySet()) {
+            for (Map.Entry<Integer, String> colEntry : colIdxMap.entrySet()) {
                 AttributeType type = attrs.get(colEntry.getValue());
-                Object value = getValue(colEntry.getValue());
+                Object value = type.isAudit ? getAuditValue(colEntry.getValue()) : getValue(colEntry.getValue());
 
-                if(colEntry.getValue().equals(ATTR_UPDATED_AT)) value = updatedAt;
+                if (colEntry.getValue().equals(ATTR_UPDATED_AT)) value = updatedAt;
 
-                if(value == null) {
+                if (value == null) {
                     statement.setNull(colEntry.getKey(), Types.NULL);
                     continue;
                 }
 
-                switch (type.dataType){
+                switch (type.dataType) {
                     case AttributeType.DATA_TYPE_STRING:
                         statement.setString(colEntry.getKey(), (String) value);
                         break;
@@ -236,20 +267,59 @@ public abstract class DbModel {
             int updateCount = statement.executeUpdate();
             System.out.println("statement: " + statement.toString() + " updates: " + updateCount);
 
-            this.createdAt = createdAt;
-            this.updatedAt = updatedAt;
+
+        } catch (MysqlDataTruncation truncErr) {
+            String msg = truncErr.getMessage();
+            String detect = "Data too long for column";
+            int idx = msg.lastIndexOf(detect);
+
+            String sub = idx >= 0 ? msg.substring(idx + detect.length(), msg.length()) : msg;
+            if (statement != null && !sub.equals(msg)) {
+
+                String col = sub.trim().replaceFirst("'", "").split("'", 2)[0];
+                try {
+                    AttributeType dbAttr = getDbAttributes().get(col);
+                    Integer currentSrc = attrs.get(col).dataLength;
+                    Integer currentDb = dbAttr.dataLength;
+                    int newDataLen = (getValue(col) + "").length()  * 2;
+                    this.changeColumn(col, new AttributeType(dbAttr.dataType, newDataLen));
+                    System.out.println("[" + getClass().getSimpleName() + "#save] error col \"" + col
+                            + "\": currentInScript=" + currentSrc + ", currentInDb=" + currentDb
+                            + ", newInDb=" + newDataLen);
+                    int updateCount = statement.executeUpdate();
+                    System.out.println("statement: " + statement.toString() + " updates: " + updateCount);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            this.createdAt = createdAt;
+            this.updatedAt = updatedAt;
         }
 
 
         return false;
     }
 
-    public boolean isValid(){
+    public boolean isValid() {
         HashMap<String, String> val = getValidation();
         return val == null || val.isEmpty();
+    }
+
+    public boolean changeColumn(String col, AttributeType attr){
+        String sql = "ALTER TABLE " + getTableName() + " MODIFY " + col + " " + attr.toSql() + ";";
+        try(Statement stm = getConnection().createStatement()){
+            ///stm.setObject();
+            System.out.println("[changeColumn] " + sql);
+            stm.executeUpdate(sql);
+            return true;
+        }catch (SQLException ex){
+            ex.printStackTrace();
+        }
+        return false;
     }
 
     public Integer getId() {
@@ -333,7 +403,9 @@ public abstract class DbModel {
         return this.getClass().getSimpleName() + "(id=" + getId() + ")";
     }
 
-    public Object getValue(String attributeName) {
+    public abstract Object getValue(String attributeName);
+
+    public Object getAuditValue(String attributeName) {
         switch (attributeName) {
             case ATTR_CREATED_AT:
                 return this.createdAt;
@@ -352,23 +424,25 @@ public abstract class DbModel {
 
     /**
      * This methods includes all attributes that are common to all tables
+     *
      * @return
      */
-    public HashMap<String, AttributeType> getResolvedAttributes(){
+    public HashMap<String, AttributeType> getResolvedAttributes() {
         HashMap<String, AttributeType> attrs = getAttributes();
         attrs = attrs == null ? new HashMap<>() : attrs;
-        attrs.put(ATTR_ID, AttributeType.INTEGER);
-        attrs.put(ATTR_CREATED_AT, AttributeType.DATE);
-        attrs.put(ATTR_UPDATED_AT, AttributeType.DATE);
-        attrs.put(ATTR_ACTIVATED_AT, AttributeType.DATE);
-        attrs.put(ATTR_DELETED_AT, AttributeType.DATE);
+
+        AttributeType date = new AttributeType(AttributeType.DATA_TYPE_DATE, null, true);
+        attrs.put(ATTR_ID, new AttributeType(AttributeType.DATA_TYPE_INTEGER, null, true));
+        attrs.put(ATTR_CREATED_AT, date);
+        attrs.put(ATTR_UPDATED_AT, date);
+        attrs.put(ATTR_ACTIVATED_AT, date);
+        attrs.put(ATTR_DELETED_AT, date);
 
         return attrs;
     }
 
 
     /**
-     *
      * @return
      */
     public boolean syncTable() {
@@ -385,75 +459,59 @@ public abstract class DbModel {
             put(SYNC_ERROR_MISMATCH_DATA_TYPE, typeMismatch);
         }};
 
-        try (Statement stmt = getConnection().createStatement()){
+        HashMap<String, String> dbColTypes = new HashMap<>();
 
-            String table = getTableName();
+        for (Map.Entry<String, AttributeType> entry : getDbAttributes().entrySet()) {
+            String col = entry.getKey();
+            String dataType = entry.getValue().toSqlDataType();
+            dbColTypes.put(col, dataType);
 
-            String query = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS as cols, INFORMATION_SCHEMA.TABLES as tbls " +
-                    "where tbls.table_schema=\"" + DEFAULT_DATABASE + "\" AND tbls.table_schema=cols.table_schema AND " +
-                    "tbls.table_name=\"" + table + "\" AND tbls.table_name=cols.table_name;";
+            if (!absentDb.contains(col)) {
+                absentServer.add(col);
+                continue;
+            }
 
-            ResultSet rs = stmt.executeQuery(query);
+            absentDb.remove(col);
+            boolean typesMatch = attrs.get(col).toSqlDataType().equals(dataType);
 
-            HashMap<String, String> dbColTypes = new HashMap<>();
+            if (typesMatch) typeMismatch.remove(col);
+        }
 
-            while (rs.next()) {
-                String col = rs.getString("COLUMN_NAME");
-                String dataType = rs.getString("DATA_TYPE");
-                dbColTypes.put(col, dataType);
+        if (dbColTypes.isEmpty()) {
+            createTable();
+        }
 
-                if (!absentDb.contains(col)) {
-                    absentServer.add(col);
+        if (!absentDb.isEmpty()) {
+            System.out.println("[" + getClass().getSimpleName() + "] creating missing columns: " + absentDb);
+            ArrayList<String> toRemove = new ArrayList<>();
+
+            for (String absent : absentDb) {
+                if (absent.equals(ATTR_ID)) {
+                    toRemove.add(absent);
                     continue;
                 }
 
-                absentDb.remove(col);
-                boolean typesMatch = attrs.get(col).toSqlDataType().equals(dataType);
-
-                if (typesMatch) typeMismatch.remove(col);
+                boolean created = createColumn(absent, attrs.get(absent));
+                if (created) toRemove.add(absent);
             }
 
-            if(dbColTypes.isEmpty()){
-                createTable();
-            }
-
-            if (!absentDb.isEmpty()) {
-                System.out.println("[" + getClass().getSimpleName() + "] creating missing columns: " + absentDb);
-                ArrayList<String> toRemove = new ArrayList<>();
-
-                for (String absent : absentDb) {
-                    if(absent.equals(ATTR_ID)){
-                        toRemove.add(absent);
-                        continue;
-                    }
-
-                    boolean created = createColumn(absent, attrs.get(absent));
-                    if(created) toRemove.add(absent);
-                }
-
-                absentDb.removeAll(toRemove);
-                typeMismatch.removeAll(toRemove);
-            }
-
-            System.out.println("[" + this.getClass().getSimpleName() + "#syncTable] validation: " + validation);
-
-            return absentDb.isEmpty() && typeMismatch.isEmpty() && absentServer.isEmpty();
-        } catch (Exception e) {
-            System.err.println("[" + getClass().getSimpleName() + "] error syncing table: " + e);
-            e.printStackTrace();
+            absentDb.removeAll(toRemove);
+            typeMismatch.removeAll(toRemove);
         }
 
-        return false;
+        System.out.println("[" + this.getClass().getSimpleName() + "#syncTable] validation: " + validation);
+
+        return absentDb.isEmpty() && typeMismatch.isEmpty() && absentServer.isEmpty();
     }
 
-    public boolean createTable(){
+    public boolean createTable() {
         String query = "CREATE TABLE " + getTableName() + " (id INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id));";
         System.out.println("[createTable] query: " + query);
 
-        try (Statement stmt = getConnection().createStatement()){
+        try (Statement stmt = getConnection().createStatement()) {
             stmt.execute(query);
             return true;
-        }catch (Exception e){
+        } catch (Exception e) {
             System.err.println("[createTable] error: " + e);
         }
         return false;
@@ -463,10 +521,10 @@ public abstract class DbModel {
         String query = "ALTER TABLE " + getTableName() + " ADD COLUMN " + colName + " " + attrType.toSql() + ";";
         System.out.println("[createColumn] query: " + query);
 
-        try (Statement stmt = getConnection().createStatement()){
+        try (Statement stmt = getConnection().createStatement()) {
             stmt.execute(query);
             return true;
-        }catch (Exception e){
+        } catch (Exception e) {
             System.err.println("[createColumn] error: " + e);
         }
         return false;
@@ -492,34 +550,44 @@ public abstract class DbModel {
      */
     static class AttributeType {
         public static final String DATA_TYPE_STRING = "string";
+        public static final String DATA_TYPE_SQL_STRING = "varchar";
         public static final String DATA_TYPE_DATE = "datetime";
+        public static final String DATA_TYPE_SQL_DATE = "datetime";
         public static final String DATA_TYPE_INTEGER = "integer";
+        public static final String DATA_TYPE_SQL_INTEGER = "int";
 
         public static final Class DATA_TYPE_STRING_CLASS = String.class;
         public static final Class DATA_TYPE_DATE_CLASS = Date.class;
         public static final Class DATA_TYPE_INTEGER_CLASS = Integer.class;
 
-        public static final AttributeType TEXT = new AttributeType(DATA_TYPE_STRING, 250);
-        public static final AttributeType STRING = new AttributeType(DATA_TYPE_STRING, 45);
+        public static final AttributeType TEXT = new AttributeType(DATA_TYPE_STRING, 45);
+        public static final AttributeType STRING = new AttributeType(DATA_TYPE_STRING, 15);
         public static final AttributeType CHARACTER = new AttributeType(DATA_TYPE_STRING, 1);
         public static final AttributeType DATE = new AttributeType(DATA_TYPE_DATE);
         public static final AttributeType INTEGER = new AttributeType(DATA_TYPE_INTEGER);
 
         public Integer dataLength;
         public String dataType;
+        public Boolean isAudit = false;
 
-        public AttributeType(String attrType, Integer dataLength){
+        public AttributeType(String attrType, Integer dataLength) {
             this.dataLength = dataLength;
             this.dataType = attrType;
         }
 
-        public AttributeType(String attrType){
+        public AttributeType(String attrType, Integer dataLength, boolean isAudit) {
+            this.dataLength = dataLength;
+            this.dataType = attrType;
+            this.isAudit = isAudit;
+        }
+
+        public AttributeType(String attrType) {
             this.dataLength = null;
             this.dataType = attrType;
         }
 
-        public Class cls(){
-            switch(this.dataType){
+        public Class cls() {
+            switch (this.dataType) {
                 case DATA_TYPE_DATE:
                     return DATA_TYPE_DATE_CLASS;
                 case DATA_TYPE_INTEGER:
@@ -530,12 +598,12 @@ public abstract class DbModel {
             return null;
         }
 
-        public static <T> T convert(String value, Class<T> dataTypeClass){
-            if(dataTypeClass.equals(DATA_TYPE_DATE_CLASS)){
+        public static <T> T convert(String value, Class<T> dataTypeClass) {
+            if (dataTypeClass.equals(DATA_TYPE_DATE_CLASS)) {
                 return null;
-            }else if(dataTypeClass.equals(DATA_TYPE_INTEGER_CLASS)){
+            } else if (dataTypeClass.equals(DATA_TYPE_INTEGER_CLASS)) {
                 return dataTypeClass.cast(Integer.parseInt(value));
-            }else if(dataTypeClass.equals(DATA_TYPE_STRING_CLASS)){
+            } else if (dataTypeClass.equals(DATA_TYPE_STRING_CLASS)) {
                 return dataTypeClass.cast(value);
             }
             return null;
@@ -544,8 +612,10 @@ public abstract class DbModel {
         public String toSql() {
             switch (this.dataType) {
                 case DATA_TYPE_STRING:
+                case DATA_TYPE_SQL_STRING:
                     return dataLength == null ? "VARCHAR(15)" : "VARCHAR(" + dataLength + ")";
                 case DATA_TYPE_INTEGER:
+                case DATA_TYPE_SQL_INTEGER:
                     return "INT";
                 case DATA_TYPE_DATE:
                     return "DATETIME";
@@ -557,11 +627,13 @@ public abstract class DbModel {
         public String toSqlDataType() {
             switch (this.dataType) {
                 case DATA_TYPE_STRING:
-                    return "varchar";
+                case DATA_TYPE_SQL_STRING:
+                    return DATA_TYPE_SQL_STRING;
                 case DATA_TYPE_INTEGER:
-                    return "int";
+                case DATA_TYPE_SQL_INTEGER:
+                    return DATA_TYPE_SQL_INTEGER;
                 case DATA_TYPE_DATE:
-                    return "datetime";
+                    return DATA_TYPE_SQL_DATE;
                 default:
                     return dataType.toLowerCase();
             }
