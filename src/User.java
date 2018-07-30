@@ -1,3 +1,5 @@
+import com.mysql.cj.xdevapi.DbDoc;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -30,8 +32,7 @@ class User extends DbModel {
     }
 
     @Override
-    public void setData(ResultSet resultSet) throws SQLException {
-        super.setData(resultSet);
+    public void updateFromResultSet(ResultSet resultSet) throws SQLException {
         this.email = resultSet.getString("email");
         this.name = resultSet.getString("name");
         this.gender = resultSet.getString("gender");
@@ -39,11 +40,6 @@ class User extends DbModel {
     }
 
     public String getName() {
-        return name;
-    }
-
-    @Override
-    public String getModelName() {
         return name;
     }
 
@@ -63,9 +59,8 @@ class User extends DbModel {
                 return this.gender;
             case "password_hash":
                 return "[PASSWRD_HASH]";
-            default:
-                return super.getValue(attributeName);
         }
+        return super.getValue(attributeName);
     }
 
 }
