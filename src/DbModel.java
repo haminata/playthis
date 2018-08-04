@@ -1,5 +1,5 @@
 import com.mysql.cj.jdbc.exceptions.MysqlDataTruncation;
-import com.mysql.cj.xdevapi.DbDoc;
+import com.mysql.cj.xdevapi.*;
 
 import java.sql.*;
 import java.sql.Statement;
@@ -347,9 +347,13 @@ public abstract class DbModel {
         StringBuilder sql = new StringBuilder();
 
         if (isNew()) {
-            sql.append("INSERT INTO " + getTableName() + " (" +
-                    cols + ") VALUES (" +
-                    qms + ");");
+            sql.append("INSERT INTO ")
+                    .append(getTableName())
+                    .append(" (")
+                    .append(cols)
+                    .append(") VALUES (")
+                    .append(qms)
+                    .append(");");
         } else {
             sql.append("UPDATE ");
             sql.append(getTableName());
@@ -362,11 +366,17 @@ public abstract class DbModel {
             sql.append(";");
         }
 
-        try (PreparedStatement statement = getConnection().prepareStatement(sql.toString(), Statement.RETURN_GENERATED_KEYS)){
-            Date updatedAt = new Date();
+        Date updatedAt = new Date();
 
-            if(this.createdAt == null) createdAt = new Date();
-            Date createdAt = this.createdAt;
+        if(this.createdAt == null) this.createdAt = new Date();
+        Date createdAt = this.createdAt;
+
+        PreparedStatement statement = null;
+        Integer updateCount = null;
+        boolean success = false;
+
+        try {
+            statement = getConnection().prepareStatement(sql.toString(), Statement.RETURN_GENERATED_KEYS);
 
             System.out.println("query: " + sql);
 
@@ -397,26 +407,9 @@ public abstract class DbModel {
                 }
             }
 
-
-            int updateCount = statement.executeUpdate();
+            updateCount = statement.executeUpdate();
             System.out.println("statement: " + statement.toString() + " updates: " + updateCount);
 
-
-            if (updateCount == 0) {
-                throw new SQLException("[" + this.getClass().getSimpleName() + "] save failed, no rows affected.");
-            }
-
-            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    this.id = generatedKeys.getInt(1);
-                }
-                else {
-                    throw new SQLException("[" + this.getClass().getSimpleName() + "] save failed, no ID obtained.");
-                }
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         } catch (MysqlDataTruncation truncErr) {
             String msg = truncErr.getMessage();
             String detect = "Data too long for column";
@@ -435,7 +428,7 @@ public abstract class DbModel {
                     System.out.println("[" + getClass().getSimpleName() + "#save] error col \"" + col
                             + "\": currentInScript=" + currentSrc + ", currentInDb=" + currentDb
                             + ", newInDb=" + newDataLen);
-                    int updateCount = statement.executeUpdate();
+                    updateCount = statement.executeUpdate();
                     System.out.println("statement: " + statement.toString() + " updates: " + updateCount);
                 } catch (SQLException e) {
                     e.printStackTrace();
@@ -444,13 +437,29 @@ public abstract class DbModel {
 
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
+        }  finally {
             this.createdAt = createdAt;
             this.updatedAt = updatedAt;
+
+            if (updateCount == null || updateCount == 0) {
+                System.out.println("[" + this.getClass().getSimpleName() + "] save failed, no rows affected.");
+            } else {
+
+                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        this.id = generatedKeys.getInt(1);
+                        success = true;
+                    } else {
+                        throw new SQLException("[" + this.getClass().getSimpleName() + "] save failed, no ID obtained.");
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
+            }
         }
 
-
-        return false;
+        return success;
     }
 
     public boolean isValid() {
