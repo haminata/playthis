@@ -1,4 +1,5 @@
-import com.mysql.cj.xdevapi.*;
+import com.mysql.cj.jdbc.exceptions.MysqlDataTruncation;
+import com.mysql.cj.xdevapi.DbDoc;
 
 import java.sql.*;
 import java.sql.Statement;
@@ -146,12 +147,13 @@ public abstract class DbModel {
         return doc;
     }
 
-    public HashMap<String, String> getValidation(){
+    public HashMap<String, String> getValidation() {
         return new HashMap<>();
     }
 
     /**
      * Forces every class to provide the plural form of the model name
+     *
      * @return
      */
     public abstract String getModelNamePlural();
@@ -159,9 +161,10 @@ public abstract class DbModel {
     /**
      * This method collects the model name provided in the class and converts it to lower case
      * The table name of the model is always the plural form of the model name
+     *
      * @return
      */
-    public String getTableName(){
+    public String getTableName() {
         return this.getModelNamePlural().toLowerCase();
     }
 
@@ -198,6 +201,33 @@ public abstract class DbModel {
         updateAuditFromJson(json);
         updateFromJson(json);
         return true;
+    }
+
+    public HashMap<String, AttributeType> getDbAttributes() {
+        HashMap<String, AttributeType> dbColTypes = new HashMap<>();
+        try (Statement stmt = getConnection().createStatement()) {
+
+            String table = getTableName();
+
+            String query = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS as cols, INFORMATION_SCHEMA.TABLES as tbls " +
+                    "where tbls.table_schema=\"" + DEFAULT_DATABASE + "\" AND tbls.table_schema=cols.table_schema AND " +
+                    "tbls.table_name=\"" + table + "\" AND tbls.table_name=cols.table_name;";
+
+            ResultSet rs = stmt.executeQuery(query);
+
+            while (rs.next()) {
+                String col = rs.getString("COLUMN_NAME");
+                String dataType = rs.getString("DATA_TYPE");
+                Integer dataLength = rs.getInt("CHARACTER_MAXIMUM_LENGTH");
+                dbColTypes.put(col, new AttributeType(dataType, dataLength));
+            }
+
+
+        } catch (Exception e) {
+            System.err.println("[" + getClass().getSimpleName() + "] error: " + e);
+            e.printStackTrace();
+        }
+        return dbColTypes;
     }
 
     public void updateAuditFromResultSet(ResultSet resultSet) throws SQLException {
@@ -285,7 +315,7 @@ public abstract class DbModel {
         return newInst;
     }
 
-    public boolean save(){
+    public boolean save() {
         StringBuilder qms = new StringBuilder();
         StringBuilder cols = new StringBuilder();
         StringBuilder updates = new StringBuilder();
@@ -294,8 +324,8 @@ public abstract class DbModel {
         HashMap<Integer, String> colIdxMap = new HashMap<>();
 
         int colIdx = 1;
-        for (String key: attrs.keySet()) {
-            if(key.equals(ATTR_ID)) continue;
+        for (String key : attrs.keySet()) {
+            if (key.equals(ATTR_ID)) continue;
 
             qms.append('?');
             cols.append(key);
@@ -305,7 +335,7 @@ public abstract class DbModel {
             updates.append('?');
 
             colIdxMap.put(colIdx, key);
-            if(colIdx != (attrs.size() - 1)){
+            if (colIdx != (attrs.size() - 1)) {
                 cols.append(',');
                 qms.append(',');
                 updates.append(',');
@@ -316,11 +346,11 @@ public abstract class DbModel {
 
         StringBuilder sql = new StringBuilder();
 
-        if(isNew()) {
+        if (isNew()) {
             sql.append("INSERT INTO " + getTableName() + " (" +
                     cols + ") VALUES (" +
                     qms + ");");
-        }else {
+        } else {
             sql.append("UPDATE ");
             sql.append(getTableName());
             sql.append(" SET ");
@@ -346,14 +376,14 @@ public abstract class DbModel {
                 AttributeType type = attrs.get(attrName);
                 Object value = DbModel.isAuditAttr(attrName) ? getAuditValue(attrName) : getValue(attrName);
 
-                if(colEntry.getValue().equals(ATTR_UPDATED_AT)) value = updatedAt;
+                if (colEntry.getValue().equals(ATTR_UPDATED_AT)) value = updatedAt;
 
-                if(value == null) {
+                if (value == null) {
                     statement.setNull(colEntry.getKey(), Types.NULL);
                     continue;
                 }
 
-                switch (type.dataType){
+                switch (type.dataType) {
                     case AttributeType.DATA_TYPE_STRING:
                         statement.setString(colEntry.getKey(), (String) value);
                         break;
@@ -371,8 +401,6 @@ public abstract class DbModel {
             int updateCount = statement.executeUpdate();
             System.out.println("statement: " + statement.toString() + " updates: " + updateCount);
 
-            this.createdAt = createdAt;
-            this.updatedAt = updatedAt;
 
             if (updateCount == 0) {
                 throw new SQLException("[" + this.getClass().getSimpleName() + "] save failed, no rows affected.");
@@ -389,15 +417,58 @@ public abstract class DbModel {
 
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (MysqlDataTruncation truncErr) {
+            String msg = truncErr.getMessage();
+            String detect = "Data too long for column";
+            int idx = msg.lastIndexOf(detect);
+
+            String sub = idx >= 0 ? msg.substring(idx + detect.length(), msg.length()) : msg;
+            if (statement != null && !sub.equals(msg)) {
+
+                String col = sub.trim().replaceFirst("'", "").split("'", 2)[0];
+                try {
+                    AttributeType dbAttr = getDbAttributes().get(col);
+                    Integer currentSrc = attrs.get(col).dataLength;
+                    Integer currentDb = dbAttr.dataLength;
+                    int newDataLen = (getValue(col) + "").length()  * 2;
+                    this.changeColumn(col, new AttributeType(dbAttr.dataType, newDataLen));
+                    System.out.println("[" + getClass().getSimpleName() + "#save] error col \"" + col
+                            + "\": currentInScript=" + currentSrc + ", currentInDb=" + currentDb
+                            + ", newInDb=" + newDataLen);
+                    int updateCount = statement.executeUpdate();
+                    System.out.println("statement: " + statement.toString() + " updates: " + updateCount);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            this.createdAt = createdAt;
+            this.updatedAt = updatedAt;
         }
 
 
         return false;
     }
 
-    public boolean isValid(){
+    public boolean isValid() {
         HashMap<String, String> val = getValidation();
         return val == null || val.isEmpty();
+    }
+
+    public boolean changeColumn(String col, AttributeType attr){
+        String sql = "ALTER TABLE " + getTableName() + " MODIFY " + col + " " + attr.toSql() + ";";
+        try(Statement stm = getConnection().createStatement()){
+            ///stm.setObject();
+            System.out.println("[changeColumn] " + sql);
+            stm.executeUpdate(sql);
+            return true;
+        }catch (SQLException ex){
+            ex.printStackTrace();
+        }
+        return false;
     }
 
     public Integer getId() {
@@ -507,6 +578,7 @@ public abstract class DbModel {
 
     /**
      * This methods includes all attributes that are common to all tables
+     *
      * @return
      */
     public HashMap<String, AttributeType> getResolvedAttributes(){
@@ -523,7 +595,6 @@ public abstract class DbModel {
 
 
     /**
-     *
      * @return
      */
     public boolean syncTable() {
@@ -601,14 +672,14 @@ public abstract class DbModel {
         return false;
     }
 
-    public boolean createTable(){
+    public boolean createTable() {
         String query = "CREATE TABLE " + getTableName() + " (id INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id));";
         System.out.println("[createTable] query: " + query);
 
-        try (Statement stmt = getConnection().createStatement()){
+        try (Statement stmt = getConnection().createStatement()) {
             stmt.execute(query);
             return true;
-        }catch (Exception e){
+        } catch (Exception e) {
             System.err.println("[createTable] error: " + e);
         }
         return false;
@@ -618,10 +689,10 @@ public abstract class DbModel {
         String query = "ALTER TABLE " + getTableName() + " ADD COLUMN " + colName + " " + attrType.toSql() + ";";
         System.out.println("[createColumn] query: " + query);
 
-        try (Statement stmt = getConnection().createStatement()){
+        try (Statement stmt = getConnection().createStatement()) {
             stmt.execute(query);
             return true;
-        }catch (Exception e){
+        } catch (Exception e) {
             System.err.println("[createColumn] error: " + e);
         }
         return false;

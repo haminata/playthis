@@ -18,7 +18,7 @@ public class Musicroom extends DbModel {
 
     @Override
     public HashMap<String, AttributeType> getAttributes() {
-        return new HashMap<String, AttributeType>(){{
+        return new HashMap<String, AttributeType>() {{
             put("created_by", AttributeType.INTEGER);
             put("name", AttributeType.STRING);
             put("status", AttributeType.STRING);
@@ -26,12 +26,11 @@ public class Musicroom extends DbModel {
     }
 
     public static void main(String[] args) {
-//        Musicroom m = new Musicroom();
-//        System.out.println("Table sync result is" + m.syncTable());
-//        m.name = "Hawa's Graduation";
-//        m.save();
-        ArrayList<Musicroom> mus = Musicroom.all(Musicroom.class);
-        System.out.println(mus.get(0).toJson());
+        Musicroom m = new Musicroom();
+        System.out.println("Table sync result is" + m.syncTable());
+        m.name = "Hawa's Graduation";
+        m.save();
+
     }
 
 }
