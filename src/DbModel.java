@@ -763,6 +763,9 @@ public abstract class DbModel {
             try {
                 DbModel inst = e.getValue().newInstance();
                 attrJson = inst.getJsonSchema();
+                attrJson.add("plural", new JsonString(){{
+                    setValue(inst.getModelNamePlural());
+                }});
             } catch (Exception e1) {
                 e1.printStackTrace();
             }

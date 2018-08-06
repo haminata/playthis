@@ -50,6 +50,9 @@ public class PlayThisServer {
             } else if(path.equals("/app.js")){
                 response = Utils.readFile("./assets/app.js");
                 statusCode = 200;
+            } else if(path.equals("/components.js")){
+                response = Utils.readFile("./assets/components.js");
+                statusCode = 200;
             } else if(path.equals("/schemas")){
                 response = DbModel.schemas().toFormattedString();
                 req.getResponseHeaders().add("Content-Type", "application/json");

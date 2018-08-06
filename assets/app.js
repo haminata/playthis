@@ -1,61 +1,61 @@
 console.log ("Hello world");
 
-function DbModel(modelName, schema){
-    this.typeName = modelName;
-    this.schema = schema;
-
-    if (!(this instanceof DbModel)) {
-        throw new Error("DbModel should be created with `new`")
-    }
-}
-
-DbModel.prototype.rendered = function (format) {
-    return this.getTemplate(format)
-        .then((tmpl) => {
-            return _.template(tmpl.template)(this);
-        })
-};
-
-DbModel.prototype.getTemplate = function (format) {
-    format = format || '';
-    return app.getJson(`templates/${this.typeName}${format === '' ? '' : '.'}${format}`)
-};
-
-DbModel.findOne = function (modelName, opts) {
-   return
-};
-
-DbModel.createClass = function(modelName, schema){
-
-    function Model(props) {
-        DbModel.call(this, modelName, schema);
-
-        _.each(schema.properties, (s, propName) => {
-            this[propName] = null;
-        });
-
-        _.each(props || {}, (value, attrName) => {
-            this[attrName] = value;
-        })
-    }
-
-    Model.prototype = Object.create(DbModel.prototype);
-
-    const inst = new Model();
-    Model.getTemplate = function () {
-        return inst.getTemplate();
-    };
-
-    Model.rendered = function (state) {
-        return inst.getTemplate()
-            .then((template) => {
-                return _.template(template)(_.merge({}, state || {}, {modelName, schema}))
-            });
-    };
-
-    Object.defineProperty(Model, 'name', {value: modelName, writable: false});
-    return Model;
-};
+// function DbModel(modelName, schema){
+//     this.typeName = modelName;
+//     this.schema = schema;
+//
+//     if (!(this instanceof DbModel)) {
+//         throw new Error("DbModel should be created with `new`")
+//     }
+// }
+//
+// DbModel.prototype.rendered = function (format) {
+//     return this.getTemplate(format)
+//         .then((tmpl) => {
+//             return _.template(tmpl.template)(this);
+//         })
+// };
+//
+// DbModel.prototype.getTemplate = function (format) {
+//     format = format || '';
+//     return app.getJson(`templates/${this.typeName}${format === '' ? '' : '.'}${format}`)
+// };
+//
+// DbModel.findOne = function (modelName, opts) {
+//    return
+// };
+//
+// DbModel.createClass = function(modelName, schema){
+//
+//     function Model(props) {
+//         DbModel.call(this, modelName, schema);
+//
+//         _.each(schema.properties, (s, propName) => {
+//             this[propName] = null;
+//         });
+//
+//         _.each(props || {}, (value, attrName) => {
+//             this[attrName] = value;
+//         })
+//     }
+//
+//     Model.prototype = Object.create(DbModel.prototype);
+//
+//     const inst = new Model();
+//     Model.getTemplate = function () {
+//         return inst.getTemplate();
+//     };
+//
+//     Model.rendered = function (state) {
+//         return inst.getTemplate()
+//             .then((template) => {
+//                 return _.template(template)(_.merge({}, state || {}, {modelName, schema}))
+//             });
+//     };
+//
+//     Object.defineProperty(Model, 'name', {value: modelName, writable: false});
+//     return Model;
+// };
 
 
 class PlayThisApp extends window.EventEmitter {
@@ -74,7 +74,7 @@ class PlayThisApp extends window.EventEmitter {
                 console.log('[getSchemas]', res);
 
                 _.each(res, (schema, modelName) => {
-                    this.models[modelName] = DbModel.createClass(modelName, schema);
+                    this.models[modelName] = DbModel.setSchema(modelName, schema);
                 })
             })
     }
