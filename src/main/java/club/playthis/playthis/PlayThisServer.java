@@ -27,9 +27,7 @@ public class PlayThisServer {
         DbModel.register(Musicroom.class);
         DbModel.register(Song.class);
 
-        HttpServer server =
-
-                HttpServer.create(new InetSocketAddress(2516), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(2516), 0);
 
         server.createContext("/", new MyHandler());
         server.setExecutor(null); // creates a default executor

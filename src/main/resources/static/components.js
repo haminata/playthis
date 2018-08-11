@@ -152,7 +152,7 @@ class ModelCollection extends React.Component {
 
 }
 
-class NavBar extends React.Component {
+class Navbar extends React.Component {
 
 
     render(){
@@ -166,6 +166,46 @@ class NavBar extends React.Component {
     }
 }
 
+class Toolbar extends React.Component {
+
+    constructor(props){
+        super(props || {});
+        this.state = {placeholder: 'Search music rooms'};
+        this.input = React.createRef();
+    }
+
+    get searchPlaceholder(){
+        return this.state.placeholder || ''
+    }
+
+    onChange(){
+        console.log('[input]', this.input.current.value);
+        app.setState({searchQueryMusicroom: this.input.current.value});
+    }
+
+    render(){
+        return e.div({className: "alert alert-warning rounded-0", role: "alert"}, [
+            e.div({className: 'container'}, [
+                e.div({className: 'input-group input-group-lg w-100'}, [
+                    e.input({
+                        type: 'text',
+                        className: 'form-control py-2 border-right-0 border bg-light',
+                        placeholder: this.searchPlaceholder,
+                        ref: this.input,
+                        onChange: this.onChange.bind(this)
+                    }),
+                    e.span({className: 'input-group-append border-light'}, [
+                        e.div({className: 'input-group-text border bg-light'}, [
+                         e.i({className: 'fa fa-search'}),
+                        ])
+                    ])
+                ])
+            ])
+        ]);
+    }
+
+}
+
 class AppView extends React.Component {
 
     constructor(props){
@@ -174,7 +214,9 @@ class AppView extends React.Component {
             user: null,
             musicrooms: [],
             newStack: [],
-            selectedRoom: null
+            searchQueryMusicroom: null,
+            searchQuerySong: null,
+            selectedRoom: null,
         }
     }
 
@@ -207,6 +249,17 @@ class AppView extends React.Component {
         })
     }
 
+    musicroomsFiltered(){
+        let rooms = this.state.musicrooms || [];
+        let query = this.state.searchQueryMusicroom;
+
+        if(this.state.searchQueryMusicroom){
+            rooms = _.filter(rooms, (r) => _.isString(r.name) && _.includes(r.name.toLowerCase(), query.toLowerCase()))
+        }
+
+        return rooms;
+    }
+
     render(){
         let style = {width: '100%', height: '100%'};
         let mainContentStyle = {height: 'calc(100% - 50px)'};
@@ -218,12 +271,13 @@ class AppView extends React.Component {
         }else{
             mainContent = e(ModelCollection, {
                 model: Musicroom,
-                modelsProps: this.state.musicrooms
+                modelsProps: this.musicroomsFiltered()
             });
         }
 
         return e.div({style}, [
-            e(NavBar),
+            e(Navbar),
+            e(Toolbar),
             e.div({style: mainContentStyle}, mainContent)
         ])
     }
