@@ -1,3 +1,5 @@
+package club.playthis.playthis;
+
 import com.mysql.cj.jdbc.exceptions.MysqlDataTruncation;
 import com.mysql.cj.xdevapi.*;
 
@@ -509,6 +511,9 @@ public abstract class DbModel {
     public static <T extends DbModel> ArrayList<T> find(Class<T> entityClass, HashMap<String, String> where, Integer limit) {
         where = where == null ? Where.EMPTY : where;
         ArrayList<T> models = new ArrayList<>();
+
+        if(entityClass == null) return models;
+
         String clsName = entityClass.getSimpleName();
         System.out.println("[" + clsName + "] find: " + where);
 

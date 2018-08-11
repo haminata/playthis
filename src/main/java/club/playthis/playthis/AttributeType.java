@@ -1,4 +1,4 @@
-/**
+package club.playthis.playthis; /**
  * Created by haminata on 29/07/2018.
  */
 

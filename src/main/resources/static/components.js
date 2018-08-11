@@ -231,7 +231,7 @@ class AppView extends React.Component {
     componentDidMount(){
         window.app = this;
 
-        this.getJson('./musicrooms')
+        this.getJson('./db/musicrooms')
             .catch(function () {
                 console.log("hey",arguments)
             })

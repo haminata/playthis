@@ -1,3 +1,5 @@
+package club.playthis.playthis;
+
 import com.mysql.cj.xdevapi.DbDoc;
 
 import java.sql.ResultSet;
