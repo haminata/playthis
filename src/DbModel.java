@@ -126,7 +126,10 @@ public abstract class DbModel {
 
             Object value = DbModel.isAuditAttr(attrName) ? this.getAuditValue(attrName) : this.getValue(attrName);
 
-            if(value == null) continue;
+            if(value == null){
+                doc.add(attrName, JsonLiteral.NULL);
+                continue;
+            }
 
             AttributeType attrType = entry.getValue();
 
@@ -271,7 +274,9 @@ public abstract class DbModel {
                 getResolvedAttributes().entrySet()) {
 
             if(e.getValue().isNumber()){
-                values.put(e.getKey(), resultSet.getInt(e.getKey()));
+                Integer val = resultSet.getInt(e.getKey());
+                val = resultSet.wasNull() ? null : val;
+                values.put(e.getKey(), val);
             }else if(e.getValue().isString()){
                 values.put(e.getKey(), resultSet.getString(e.getKey()));
             }else if(e.getValue().isDatetime()){
@@ -532,6 +537,9 @@ public abstract class DbModel {
                     case AttributeType.DATA_TYPE_STRING:
                         query += " " + e.getKey() + "=\"" + value + "\"";
                         break;
+                    case AttributeType.DATA_TYPE_INTEGER:
+                        query += " " + e.getKey() + "=" + value + "";
+                        break;
                     default:
                         throw new Exception("Unsupported attribute: type=\"" + e.getValue() + "\", value=\"" + value);
                 }
@@ -552,6 +560,7 @@ public abstract class DbModel {
 
         } catch (Exception err) {
             System.err.println("[" + clsName + "#find] error: " + err);
+            err.printStackTrace();
         }
         return models;
     }

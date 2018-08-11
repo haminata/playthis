@@ -58,100 +58,110 @@ console.log ("Hello world");
 // };
 
 
-class PlayThisApp extends window.EventEmitter {
+// class PlayThisApp extends window.EventEmitter {
+//
+//     constructor() {
+//         super();
+//         this._modelSchemas = null;
+//         this.models = {};
+//     }
+//
+//     getSchemas(){
+//         if(_.isPlainObject(this._modelSchemas)) Promise.resolve(this._modelSchemas);
+//
+//         return this.getJson('/schemas')
+//             .then((res) => {
+//                 console.log('[getSchemas]', res);
+//
+//                 _.each(res, (schema, modelName) => {
+//                     this.models[modelName] = DbModel.setSchema(modelName, schema);
+//                 })
+//             })
+//     }
+//
+//     getJson(url) {
+//         return new Promise((resolve, reject) => {
+//             $.ajax({url: url, dataType: 'json', success: resolve, error: reject});
+//         })
+//     }
+//
+//     getHtml(url) {
+//         return new Promise((resolve, reject) => {
+//             $.ajax({url: url, dataType: 'html', success: resolve, error: reject});
+//         })
+//     }
+//
+//     init(){
+//         const emitWrap = (event) => {
+//
+//             let emit = event.target.getAttribute(`data-emit-${event.type}`);
+//             emit = `${event.type}_${emit}`;
+//             if (this.debugMode) console.log('[Directive] emitting:', emit);
+//             this.emit(emit, event)
+//         };
+//
+//         ['keyup', 'click', 'change', 'focus'].forEach((eventType) => {
+//             $(document).on(eventType, `[data-emit-${eventType}]`, emitWrap)
+//         });
+//
+//         this.getSchemas();
+//
+//         // return this.getJson('./musicrooms')
+//         //     .catch(function () {
+//         //         console.log("hey",arguments)
+//         //     })
+//         //     .then((roomData) => {
+//         //
+//         //
+//         //         let rooms = toCamelCase(roomData.data);
+//         //         console.log("musicrooms", rooms);
+//         //
+//         //         let container = document.getElementsByClassName('container')[0];
+//         //         let args = {
+//         //             modelsProps: rooms,
+//         //             model: Musicroom
+//         //         };
+//         //
+//         //         ReactDOM.render(e(ModelCollection, args), container, function(){
+//         //             console.log('[react] rendered:', arguments);
+//         //         })
+//         //     })
+//     }
+// }
 
-    constructor() {
-        super();
-        this._modelSchemas = null;
-        this.models = {};
-    }
+function toCamelCase(obj){
+    if (_.isArray(obj)) return _.map(obj, toCamelCase);
 
-    getSchemas(){
-        if(_.isPlainObject(this._modelSchemas)) Promise.resolve(this._modelSchemas);
-
-        return this.getJson('/schemas')
-            .then((res) => {
-                console.log('[getSchemas]', res);
-
-                _.each(res, (schema, modelName) => {
-                    this.models[modelName] = DbModel.setSchema(modelName, schema);
-                })
-            })
-    }
-
-    getJson(url) {
-        return new Promise((resolve, reject) => {
-            $.ajax({url: url, dataType: 'json', success: resolve, error: reject});
-        })
-    }
-
-    getHtml(url) {
-        return new Promise((resolve, reject) => {
-            $.ajax({url: url, dataType: 'html', success: resolve, error: reject});
-        })
-    }
-
-    init(){
-        const emitWrap = (event) => {
-
-            let emit = event.target.getAttribute(`data-emit-${event.type}`);
-            emit = `${event.type}_${emit}`;
-            if (this.debugMode) console.log('[Directive] emitting:', emit);
-            this.emit(emit, event)
-        };
-
-        ['keyup', 'click', 'change', 'focus'].forEach((eventType) => {
-            $(document).on(eventType, `[data-emit-${eventType}]`, emitWrap)
-        });
-
-        this.getSchemas();
-
-        return Promise.all([this.getJson('./templates/musicroom'), this.getJson('./musicrooms')])
-            .catch(function () {
-                console.log("hey",arguments)
-            })
-            .then(([templateResp, roomData]) => {
-                console.log("musicrooms", roomData);
-
-                let rooms = roomData.data;
-                let container = document.getElementsByClassName('container')[0];
-
-                let roomTemplateString = templateResp.template;
-
-                let roomTemplate = _.template(roomTemplateString);
-
-                for(let i = 0; i < rooms.length; i++){
-                    let room = rooms[i];
-
-                    let elemString = roomTemplate(room);
-
-                    $(container).append(elemString);
-                }
-            })
-    }
+    return _.transform(obj, function(result, value, key) {
+        let newKey = _.camelCase(key);
+        if(_.isPlainObject(value)){
+            value = toCamelCase(value);
+        }
+        result[newKey] = value;
+    }, {})
 }
-
-app = new PlayThisApp();
-
-app.on('click_create_room', (e) => {
-   console.log('[click_create_room]', e);
-    let modalElem = $('#crud');
-
-    new app.models.Musicroom()
-        .rendered('edit')
-        .then((txt) => {
-
-            let container = modalElem.find('.modal-body').first();
-            container.empty();
-            container.append(txt);
-        });
-
-    $('#crud').modal('show');
-});
-
-
-$(function(){
-    app.init();
-});
-
-app.debugMode = true;
+//
+// app = new PlayThisApp();
+//
+// app.on('click_create_room', (e) => {
+//    console.log('[click_create_room]', e);
+//     let modalElem = $('#crud');
+//
+//     new app.models.Musicroom()
+//         .rendered('edit')
+//         .then((txt) => {
+//
+//             let container = modalElem.find('.modal-body').first();
+//             container.empty();
+//             container.append(txt);
+//         });
+//
+//     $('#crud').modal('show');
+// });
+//
+//
+// $(function(){
+//     app.init();
+// });
+//
+// app.debugMode = true;

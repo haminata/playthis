@@ -18,127 +18,74 @@
   <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
   <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/react-dom-factories@1.0.2/index.js"></script>
 </head>
 <body>
 
-<nav class="nav navbar navbar-dark navbar-expand-sm bg-dark">
-  <!-- Navbar content -->
-  <a class="navbar-brand" href="#">PlayThis</a>
-  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
-  </button>
-  <div class="collapse navbar-collapse" id="navbarText">
-    <ul class="nav nav-tab navbar-nav mr-auto">
+<div id="app" style="width: 100%; height: 100%"></div>
 
-      <li class="nav-item ">
-        <a class="nav-link active show" href="#home" data-toggle="tab">Home</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#tab2" data-toggle="tab">test2</a>
-      </li>
-    </ul>
-    <ul class="navbar-nav">
-      <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          Dropdown
-        </a>
-        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-          <a class="dropdown-item" href="#">Action</a>
-          <a class="dropdown-item" href="#">Another action</a>
-          <div class="dropdown-divider"></div>
-          <a class="dropdown-item" href="#">Something else here</a>
-        </div>
-      </li>
-    </ul>
-    <button class="btn btn-outline-success my-2 my-sm-0 ml-2" data-emit-click="create_room">Create Room</button>
-  </div>
-</nav>
+<!--<nav class="nav navbar navbar-dark navbar-expand-sm bg-dark">-->
+  <!--&lt;!&ndash; Navbar content &ndash;&gt;-->
+  <!--<a class="navbar-brand" href="#">PlayThis</a>-->
+  <!--<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">-->
+    <!--<span class="navbar-toggler-icon"></span>-->
+  <!--</button>-->
+  <!--<div class="collapse navbar-collapse" id="navbarText">-->
+    <!--<ul class="nav nav-tab navbar-nav mr-auto">-->
 
-
-<main role="main">
-  <div class="tab-content">
-    <div class="tab-pane active show" id="home">
-      <div class="container">
-        <h1>PLAYTHIS</h1>
-        <p>Welcome to PlayThis, a platform that allows you vote for songs in any event.</p>
-      </div>
-    </div>
-    <div class="tab-pane" id="tab2">
-      <h4>test2</h4>
-      <div id="root"></div>
-
-      <script type="text/es2015">
-        // YOUR PLAYGROUND CODE GOES HERE
-        // EXAMPLE:
-        function App ({ title }) {
-          return (
-            <div>{title}</div>
-          );
-        }
-        ReactDOM.render(
-          <App title="Hello World" />,
-          document.getElementById('root')
-        );
-      </script>
-
-    </div>
-  </div>
-</main>
-
-  <!-- Modal -->
-<div class="modal fade" id="crud" role="dialog">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title">Login</h4>
-      </div>
-      <div class="modal-body">
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-</div>
+      <!--<li class="nav-item ">-->
+        <!--<a class="nav-link active show" href="#home" data-toggle="tab">Home</a>-->
+      <!--</li>-->
+      <!--<li class="nav-item">-->
+        <!--<a class="nav-link" href="#tab2" data-toggle="tab">test2</a>-->
+      <!--</li>-->
+    <!--</ul>-->
+    <!--<ul class="navbar-nav">-->
+      <!--<li class="nav-item dropdown">-->
+        <!--<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">-->
+          <!--Dropdown-->
+        <!--</a>-->
+        <!--<div class="dropdown-menu" aria-labelledby="navbarDropdown">-->
+          <!--<a class="dropdown-item" href="#">Action</a>-->
+          <!--<a class="dropdown-item" href="#">Another action</a>-->
+          <!--<div class="dropdown-divider"></div>-->
+          <!--<a class="dropdown-item" href="#">Something else here</a>-->
+        <!--</div>-->
+      <!--</li>-->
+    <!--</ul>-->
+    <!--<button class="btn btn-outline-success my-2 my-sm-0 ml-2" data-emit-click="create_room">Create Room</button>-->
+  <!--</div>-->
+<!--</nav>-->
 
 
-  <div class="modal fade" id="myModal" role="dialog">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
-          <h4 class="modal-title">Login</h4>
-        </div>
-        <div class="modal-body">
-          <form action="/action_page.php">
-      <div class="form-group">
-        <label for="email">Email address:</label>
-        <input type="email" class="form-control" id="email">
-      </div>
-      <div class="form-group">
-        <label for="pwd">Password:</label>
-        <input type="password" class="form-control" id="pwd">
-      </div>
-      <div class="checkbox">
-        <label><input type="checkbox"> Remember me</label>
-      </div>
-      <button type="submit" class="btn btn-default">Submit</button>
-    </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+<!--<main role="main">-->
+  <!--<div class="tab-content">-->
+    <!--<div class="tab-pane active show" id="home">-->
+      <!--<div class="container">-->
+        <!--<h1>PLAYTHIS</h1>-->
+        <!--<p>Welcome to PlayThis, a platform that allows you vote for songs in any event.</p>-->
+      <!--</div>-->
+    <!--</div>-->
+    <!--<div class="tab-pane" id="tab2">-->
+      <!--<h4>test2</h4>-->
+      <!--<div id="root"></div>-->
+    <!--</div>-->
+  <!--</div>-->
+<!--</main>-->
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/eventemitter3/3.1.0/index.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 
 <script src="components.js"></script>
 <script src="app.js"></script>
+<script>
+  $(() => {
+      ReactDOM.render(e(AppView, {}), document.getElementById('app'), function(){
+          console.log('[react] rendered:', arguments);
+      })
+  })
+</script>
 </body>
 </html>

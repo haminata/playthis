@@ -10,6 +10,7 @@ public class Musicroom extends DbModel {
     public String name;
     public String status;
 
+    public static final String ATTR_CREATED_BY = "created_by";
 
     @Override
     public String getModelNamePlural() {
@@ -19,10 +20,30 @@ public class Musicroom extends DbModel {
     @Override
     public HashMap<String, AttributeType> getAttributes() {
         return new HashMap<String, AttributeType>() {{
-            put("created_by", AttributeType.INTEGER);
+            put(ATTR_CREATED_BY, AttributeType.INTEGER);
             put("name", AttributeType.STRING);
             put("status", AttributeType.STRING);
         }};
+    }
+
+    public User getCreatedBy(){
+        Integer createdBy = (Integer) getValue(ATTR_CREATED_BY);
+        User user = null;
+        if(createdBy != null && createdBy > 0) user = User.findOne(User.class, new Where(){{
+            put(ATTR_ID, createdBy.toString());
+        }});
+        return user;
+    }
+
+    @Override
+    public DbDoc toJson() {
+        DbDoc json = super.toJson();
+        User user = getCreatedBy();
+
+        if(user != null) {
+            json.put(ATTR_CREATED_BY, user.toJson());
+        }
+        return json;
     }
 
     public static void main(String[] args) {
