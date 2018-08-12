@@ -20,6 +20,7 @@
   <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
 
   <script src="https://cdn.jsdelivr.net/npm/react-dom-factories@1.0.2/index.js"></script>
+  <script src="https://sdk.scdn.co/spotify-player.js"></script>
 
   <style>
     .required {
@@ -116,6 +117,38 @@
       ReactDOM.render(e(AppView, {}), document.getElementById('app'), function(){
           console.log('[react] rendered:', arguments);
       })
+
+      window.onSpotifyWebPlaybackSDKReady = () => {
+          console.log('[spotify] initialising player')
+
+          const token = 'BQC0qUoIG-IEhPIIRTXU96oxsKP1FdTEiMo3_mVtUO1SaX89U3uabi6ucOEQkzMzzgg-rn0v0izeZ6pm8VJ5Pw9g5gewtVh4MzbCxpCyhS13exzhUZ8fi5FWnCbCFDFXzGRGwpmFttY4yngbAm0CGc2_1Cjfg0Z_o7IH';
+          const player = new Spotify.Player({
+              name: 'Web Playback SDK Quick Start Player',
+              getOAuthToken: cb => { cb(token); }
+          });
+
+          // Error handling
+          player.addListener('initialization_error', ({ message }) => { console.error(message); });
+          player.addListener('authentication_error', ({ message }) => { console.error(message); });
+          player.addListener('account_error', ({ message }) => { console.error(message); });
+          player.addListener('playback_error', ({ message }) => { console.error(message); });
+
+          // Playback status updates
+          player.addListener('player_state_changed', state => { console.log(state); });
+
+          // Ready
+          player.addListener('ready', ({ device_id }) => {
+              console.log('Ready with Device ID', device_id);
+          });
+
+          // Not Ready
+          player.addListener('not_ready', ({ device_id }) => {
+              console.log('Device ID has gone offline', device_id);
+          });
+
+          // Connect to the player!
+          player.connect();
+      };
   })
 </script>
 </body>

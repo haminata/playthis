@@ -366,7 +366,7 @@ class Navbar extends React.Component {
                 className: 'btn btn-outline-success my-2 my-sm-0 ml-2',
                 onClick: this.onCreateMusicroom.bind(this)
             }, 'Create Room'),
-            e.button({
+            e.a({href: '/spotify_login',
                 className: 'btn btn-link my-2 my-sm-0 ml-2',
                 onClick: this.onSignIn.bind(this)
             }, 'Sign In')

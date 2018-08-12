@@ -14,12 +14,18 @@ import java.util.Date;
  */
 public abstract class DbModel {
 
+    /**
+     *  Names of general attributes common to all db objects referred to as "Audit" attributes. They are useful for investigations and event tracking.
+     */
     public static final String ATTR_ID = "id";
     public static final String ATTR_CREATED_AT = "created_at";
     public static final String ATTR_UPDATED_AT = "updated_at";
     public static final String ATTR_DELETED_AT = "deleted_at";
     public static final String ATTR_ACTIVATED_AT = "activated_at";
 
+    /**
+     * collection of above audit attributes
+     */
     public static final ArrayList<String> ATTR_NAMES_AUDIT = new ArrayList<String>(5){{
         add(ATTR_ID);
         add(ATTR_CREATED_AT);
@@ -28,19 +34,32 @@ public abstract class DbModel {
         add(ATTR_DELETED_AT);
     }};
 
-    public static final String SYNC_ERROR_NOT_FOUND_DB = "MySQL database is missing column(s): ";
-    public static final String SYNC_ERROR_NOT_FOUND_JAVA = "Java source code is missing attribute(s): ";
-    public static final String SYNC_ERROR_MISMATCH_DATA_TYPE = "Column data types are out of sync: ";
+    /**
+     *  Classification of database to Java out of sync errors
+     */
+    public static final String SYNC_ERROR_NOT_FOUND_DB = "MySQL database is missing column(s): "; // attribute existing in Java but missing in MySql db
+    public static final String SYNC_ERROR_NOT_FOUND_JAVA = "Java source code is missing attribute(s): "; // MySQL column has columns not present in Java
+    public static final String SYNC_ERROR_MISMATCH_DATA_TYPE = "Column data types are out of sync: "; // data type or data length mismatch
+
 
     private static final String DEFAULT_DATABASE = "ptdev";
-    private static Connection conn = null;
-    protected Integer id;
+    private static Connection conn = null; // cached connection used for the duration of the server run
 
+    protected Integer id; // MySql record id
+    public Date createdAt, updatedAt, deletedAt, activatedAt;
+
+
+    /**
+     * TODO - explain after discussion around HTTP endpoints
+     */
     public static final HashMap<String, Class<? extends DbModel>> CLASSES = new HashMap<>();
     public static final HashMap<String, Class<? extends DbModel>> PLURAL_NAME_CLASS = new HashMap<>();
 
-    public Date createdAt, updatedAt, deletedAt, activatedAt;
-
+    /**
+     * Test if a given attribute name is an audit attribute name
+     * @param attrName
+     * @return
+     */
     public static Boolean isAuditAttr(String attrName){
         return ATTR_NAMES_AUDIT.contains(attrName);
     }
@@ -49,13 +68,17 @@ public abstract class DbModel {
         return PLURAL_NAME_CLASS;
     }
 
-    public static synchronized HashMap<String, Class<? extends DbModel>> classes(){
-        return CLASSES;
-    }
-
+    /**
+     * default constructor allows creation of DbModel instance without arguments
+     */
     public DbModel() {
     }
 
+    /**
+     * TODO - discuss after endpoint walk through
+     * @param cls
+     * @param <T>
+     */
     public static <T extends DbModel> void register(Class<T> cls){
         boolean exists = CLASSES.containsKey(cls.getSimpleName());
 
@@ -73,6 +96,10 @@ public abstract class DbModel {
 
     public static final String JDBC_DRIVER_CLASSPATH = "com.mysql.cj.jdbc.Driver";
 
+    /**
+     * Getter method for database connection. Returns cached connection if one exists otherwise creates a new connection
+     * @return
+     */
     public Connection getConnection() {
         try {
             if (conn == null || conn.isClosed()) {
@@ -86,6 +113,13 @@ public abstract class DbModel {
         return conn;
     }
 
+    /**
+     * Used by getConnection to instantiate new SQL connection object
+     * @param database
+     * @param user
+     * @param password
+     * @return
+     */
     public static Connection createConnection(String database, String user, String password) {
         try {
             String url = "jdbc:mysql://localhost:3306/" + database + "?useSSL=false";
