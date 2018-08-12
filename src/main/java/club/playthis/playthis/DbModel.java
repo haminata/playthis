@@ -456,7 +456,7 @@ public abstract class DbModel {
                     if (generatedKeys.next()) {
                         this.id = generatedKeys.getInt(1);
                         success = true;
-                    } else {
+                    } else if(this.isNew()) {
                         throw new SQLException("[" + this.getClass().getSimpleName() + "] save failed, no ID obtained.");
                     }
                 } catch (SQLException e) {
@@ -465,6 +465,8 @@ public abstract class DbModel {
 
             }
         }
+
+        WebsocketController.broadcast("db_update", this);
 
         return success;
     }

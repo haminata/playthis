@@ -1,11 +1,7 @@
 package club.playthis.playthis;
 
 import com.mysql.cj.xdevapi.DbDoc;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -19,6 +15,12 @@ public class DbModelController {
         if(cls != null) return Utils.responseJson(DbModel.all(cls)).toFormattedString();
 
         throw new RuntimeException("id-" + modelName);
+    }
+
+    @PostMapping("/{modelName}")
+    public String saveModel(@PathVariable String modelName){
+
+        return "{\"\"}";
     }
 
 }

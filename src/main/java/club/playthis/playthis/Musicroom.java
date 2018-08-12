@@ -25,6 +25,7 @@ public class Musicroom extends DbModel {
             put(ATTR_CREATED_BY, AttributeType.INTEGER);
             put("name", AttributeType.STRING);
             put("status", AttributeType.STRING);
+            put("description", AttributeType.TEXT);
         }};
     }
 
@@ -51,8 +52,8 @@ public class Musicroom extends DbModel {
     public static void main(String[] args) {
         Musicroom m = new Musicroom();
         System.out.println("Table sync result is" + m.syncTable());
-        m.name = "Hawa's Graduation";
-        m.save();
+        //m.name = "Hawa's Graduation";
+        //m.save();
 
     }
 
