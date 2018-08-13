@@ -79,14 +79,16 @@ public class WebsocketController extends TextWebSocketHandler {
         public TextMessage toTextMsg() {
             DbDoc json = new DbDocImpl();
             JsonValue v = topicUrl != null ? new JsonString() {{
-                setValue(topicUrl.toString());
+                String url = topicUrl.toString();
+                setValue(url.startsWith("\\") ? url.substring(1) : url);
             }} : JsonLiteral.NULL;
 
             json.put("topic", v);
 
             if (body != null) json.put("data", body);
 
-            return new TextMessage(json.toFormattedString());
+            System.out.println("[formatted] " + json.toFormattedString());
+            return new TextMessage(json.toString());
         }
     }
 

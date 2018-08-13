@@ -18,37 +18,46 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 
 @RestController
 @RequestMapping("/")
 public class AppController {
 
-    @GetMapping("/schema")
+    @GetMapping("/schemas")
     public String getSchema(){
         return DbModel.schemas().toFormattedString();
     }
+
+    public static final String CLIENT_ID = "e3966e30011d4895997ce89c797de5a5";
 
     @GetMapping("/spotify_callback")
     public String callback(@QueryParam("code") String code){
         System.out.println("[Spotify] " + code);
 
         DbDoc body = null;
-        String redirectUri = "";
+        String redirectUri = "http://localhost:2516/spotify_callback/";
         HttpClient httpClient = new DefaultHttpClient();
-        String clientId = "96cb241b6b2446cb8fd48b68f1493871";
+        //String clientId = "96cb241b6b2446cb8fd48b68f1493871";
         String clientSecret = Utils.readFile("src/main/resources/static/appsecret.txt").trim();
+
         try {
             HttpPost request = new HttpPost("https://accounts.spotify.com/api/token");
 
-            request.addHeader("Content-Type", "application/x-www-form-urlencoded");
-            request.addHeader("Accept","application/json");
+            String authStr = CLIENT_ID + ":" + clientSecret;
 
-            String formEncoded = "client_id=" + clientId +
-                    "&client_secret=" + clientSecret +
-                    "&grant_type=client_credentials" +
+            request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+            request.addHeader("Authorization", "Basic " + Base64.getUrlEncoder().encodeToString(authStr.getBytes()));
+
+            System.out.println("Header: " + Arrays.toString(request.getAllHeaders()));
+
+            String formEncoded = "grant_type=authorization_code" + //authorization_code client_credentials
                     "&code=" + code +
-                    "&redirect_uri=" + redirectUri;
+                    "&redirect_uri=" + redirectUri +
+                    "&client_id=" + CLIENT_ID +
+                    "&client_secret=" + clientSecret;
+
             request.setEntity(new StringEntity(formEncoded));
 
             HttpResponse response = httpClient.execute(request);
@@ -65,6 +74,7 @@ public class AppController {
 
         if(body != null){
             System.out.println("[response]" + body.toFormattedString());
+            return body.toFormattedString();
         }
 
         return "OK";
@@ -72,7 +82,8 @@ public class AppController {
 
     @GetMapping("/spotify_login")
     public ModelAndView spotify() throws UnsupportedEncodingException {
-        String scopes = "streaming user-read-birthdate user-read-email user-read-private";
+        String scopes = "streaming app-remote-control user-read-birthdate user-read-email user-read-private user-read-currently-playing user-modify-playback-state user-read-playback-state";
+
         scopes = (!scopes.isEmpty() ? "&scope=" + URLEncoder.encode(scopes, StandardCharsets.UTF_8.toString()) : "");
 
         String redirectUri = "http://localhost:2516/spotify_callback/";
@@ -80,7 +91,7 @@ public class AppController {
 
         String url = "https://accounts.spotify.com/authorize" +
         "?response_type=code" +
-                "&client_id=" + "96cb241b6b2446cb8fd48b68f1493871" +
+                "&client_id=" + CLIENT_ID + "&show_dialog=true" +
                 scopes + "&redirect_uri=" + rediretUri;
 
 
