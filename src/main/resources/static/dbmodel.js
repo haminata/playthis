@@ -336,7 +336,7 @@ class Musicroom extends DbModel {
         return e.div({className: 'container', style: {}}, [
             e.div({className: 'row'}, [
                 e.div({className: "col-md-2"}, "Now Playing..."),
-                e.div({className: "col-md-6"}, e.input({placeholder: 'Enter Spotify track', className: 'form-control', onChange: this.onTrackIdChange})),
+                e.div({className: "col-md-6"}, e.input({placeholder: 'Enter Spotify track', className: 'form-control', onChange: this.onTrackIdChange.bind(this)})),
                 e.div({className: "col-md-2"}, e.button({style, className: 'btn btn-success', onClick: () => app.play(this.trackId)}, 'Play')),
                 e.div({className: "col-md-2"}, e.button({style, className: 'btn btn-dark', onClick: () => app.pause(this.trackId)}, 'Pause')),
             ]),
