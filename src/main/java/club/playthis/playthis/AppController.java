@@ -1,7 +1,9 @@
 package club.playthis.playthis;
 
 import com.mysql.cj.xdevapi.DbDoc;
+import com.mysql.cj.xdevapi.DbDocImpl;
 import com.mysql.cj.xdevapi.JsonParser;
+import com.mysql.cj.xdevapi.JsonString;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -28,6 +30,13 @@ public class AppController {
     @GetMapping("/schemas")
     public String getSchema(){
         return DbModel.schemas().toFormattedString();
+    }
+
+    @GetMapping("/spotify_token")
+    public String getSpotify(){
+        return User.findOne(User.class, new DbModel.Where(){{
+            put(DbModel.ATTR_ID, "1");
+        }}).spotifyAccesstoken().raw.toFormattedString();
     }
 
     public static final String CLIENT_ID = "e3966e30011d4895997ce89c797de5a5";
@@ -65,6 +74,16 @@ public class AppController {
             body = JsonParser.parseDoc(responseString);
 
             // handle response here...
+            User user = User.findOne(User.class, new DbModel.Where(){{
+                put(DbModel.ATTR_ID, "1");
+            }});
+
+            user.update(new DbDocImpl(){{
+                put(User.ATTR_SPOTIFY_ACCESSTOKEN, new JsonString(){{
+                    setValue(responseString);
+                }});
+            }});
+            user.save();
         }catch (Exception ex) {
             // handle exception here
             ex.printStackTrace();

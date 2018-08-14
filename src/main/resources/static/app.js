@@ -24,7 +24,9 @@ class AppView extends React.Component {
     }
 
     getSpotifyOAuthToken(){
-        return this.getJson("spotify_token")
+        return this.getJson("spotify_token").then((tokens) => {
+            if(_.isPlainObject(tokens)) return toCamelCase(tokens);
+        })
     }
 
     set newMusicroom(m){
@@ -55,13 +57,47 @@ class AppView extends React.Component {
         return this.state.newMusicroom
     }
 
+    play(spotify_uri){
+        spotify_uri = spotify_uri || 'spotify:track:4eTgQdjd7bIet6d045GGUc'
+        return this.getSpotifyOAuthToken().then(tokens => {
+
+            return fetch(`https://api.spotify.com/v1/me/player/play?device_id=${this.spotifyPlayer._options.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ uris: [spotify_uri] }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${tokens.accessToken}`
+                },
+            });
+        })
+    }
+
+    pause(spotify_uri){
+        spotify_uri = spotify_uri || 'spotify:track:4eTgQdjd7bIet6d045GGUc'
+        return this.getSpotifyOAuthToken().then(tokens => {
+
+            return fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${this.spotifyPlayer._options.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ uris: [spotify_uri] }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${tokens.accessToken}`
+                },
+            });
+        })
+    }
+
     get spotifyPlayer(){
         if(!this._spotifyPlayer){
             this._spotifyPlayer = new Spotify.Player({
                 name: 'PlayThis',
-                getOAuthToken: cb => {
-                    return this.getSpotifyOAuthToken()
-                        .then(cb);
+                getOAuthToken: (cb) => {
+                    this.getSpotifyOAuthToken()
+                        .then((tokens) => {
+                            console.log('[tokens]', tokens)
+                            window.tokens = tokens
+                            cb(tokens.accessToken)
+                        });
                 }
             });
         }
@@ -166,7 +202,7 @@ class AppView extends React.Component {
         } else {
             mainContent = e(ModelCollection, {
                 model: Musicroom,
-                modelsProps: this.musicroomsFiltered()
+                modelsProps: _.map(this.musicroomsFiltered(), (m) => Object.assign({viewFormat: VIEW_FORMAT.GRID_ITEM}, m))
             });
         }
 

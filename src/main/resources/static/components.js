@@ -97,7 +97,7 @@ class Toolbar extends React.Component {
 
     constructor(props) {
         super(props || {});
-        this.state = Object.assign({placeholder: 'Search music rooms'}, this.props);
+        this.state = Object.assign({placeholder: 'Search music rooms', dropdownModels: []}, this.props);
         this.input = React.createRef();
     }
 
@@ -111,7 +111,8 @@ class Toolbar extends React.Component {
 
     onChange() {
         console.log('[input]', this.input.current.value);
-        app.setState({searchQueryMusicroom: this.input.current.value});
+        if(app.musicroomView) app.musicroomView.setState({searchQuerySong: this.input.current.value})
+        else app.setState({searchQueryMusicroom: this.input.current.value});
     }
 
     render() {
@@ -125,11 +126,12 @@ class Toolbar extends React.Component {
                     ]),
                     e.input({
                         type: 'text',
-                        className: 'form-control py-2 border-left-0 border bg-light',
+                        className: 'form-control py-2 border-left-0 border rounded-right bg-light',
                         placeholder: this.searchPlaceholder,
                         ref: this.input,
                         onChange: this.onChange.bind(this)
                     }),
+                    e(ModelCollection, {modelsProps: this.state.dropdownModels || [], model: Song})
                 ])
             ])
         ]);

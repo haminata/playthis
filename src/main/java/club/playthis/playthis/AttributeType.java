@@ -20,8 +20,8 @@ class AttributeType {
     public static final Class DATA_TYPE_DATE_CLASS = Date.class;
     public static final Class DATA_TYPE_INTEGER_CLASS = Integer.class;
 
-    public static final AttributeType TEXT = new AttributeType(DATA_TYPE_STRING, 250);
-    public static final AttributeType STRING = new AttributeType(DATA_TYPE_STRING, 45);
+    public static final AttributeType TEXT = new AttributeType(DATA_TYPE_STRING, 512);
+    public static final AttributeType STRING = new AttributeType(DATA_TYPE_STRING, 128);
     public static final AttributeType CHARACTER = new AttributeType(DATA_TYPE_STRING, 1);
     public static final AttributeType DATE = new AttributeType(DATA_TYPE_DATE);
     public static final AttributeType INTEGER = new AttributeType(DATA_TYPE_INTEGER);

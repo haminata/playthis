@@ -278,28 +278,33 @@ public abstract class DbModel {
     }
 
     public void updateAuditFromJson(DbDoc json){
-        this.createdAt = Utils.extractDate(json, ATTR_CREATED_AT);
-        this.updatedAt = Utils.extractDate(json, ATTR_UPDATED_AT);
-        this.deletedAt = Utils.extractDate(json, ATTR_DELETED_AT);
-        this.activatedAt = Utils.extractDate(json, ATTR_ACTIVATED_AT);
+        if(json.containsKey(ATTR_CREATED_AT)) this.createdAt = Utils.extractDate(json, ATTR_CREATED_AT, null);
+        if(json.containsKey(ATTR_UPDATED_AT)) this.updatedAt = Utils.extractDate(json, ATTR_UPDATED_AT, null);
+        if(json.containsKey(ATTR_DELETED_AT)) this.deletedAt = Utils.extractDate(json, ATTR_DELETED_AT, null);
+        if(json.containsKey(ATTR_ACTIVATED_AT)) this.activatedAt = Utils.extractDate(json, ATTR_ACTIVATED_AT, null);
 
-        JsonNumber num = (JsonNumber) json.get(ATTR_ID);
-
-        this.id = num != null ? num.getInteger() : null;
+        if(json.containsKey(ATTR_ID)){
+            JsonNumber num = (JsonNumber) json.get(ATTR_ID);
+            this.id = num != null ? num.getInteger() : null;
+        }
     }
 
     public void updateFromJson(DbDoc json){
-        for (Map.Entry<String, AttributeType> e :
-                getResolvedAttributes().entrySet()) {
-            JsonValue v = json.get(e.getKey());
+        HashMap<String, AttributeType> attrs = getResolvedAttributes();
 
-            if(e.getValue().isNumber()){
-                values.put(e.getKey(), v != null ? ((JsonNumber) v).getInteger() : null);
-            }else if(e.getValue().isString()){
-                values.put(e.getKey(), v != null ? ((JsonString) v).getString() : null);
-            }else if(e.getValue().isDatetime()){
+        for (String attrName: json.keySet()) {
+            if(!attrs.containsKey(attrName)) continue;
+
+            AttributeType attrType = attrs.get(attrName);
+            JsonValue v = json.get(attrName);
+
+            if(attrType.isNumber()){
+                values.put(attrName, v != null ? ((JsonNumber) v).getInteger() : null);
+            }else if(attrType.isString()){
+                values.put(attrName, v != null ? ((JsonString) v).getString() : null);
+            }else if(attrType.isDatetime()){
                 Date d = v != null ? Timestamp.valueOf(((JsonString) v).getString()) : null;
-                values.put(e.getKey(), d);
+                values.put(attrName, d);
             }
 
         }
@@ -464,8 +469,9 @@ public abstract class DbModel {
                     AttributeType dbAttr = getDbAttributes().get(col);
                     Integer currentSrc = attrs.get(col).dataLength;
                     Integer currentDb = dbAttr.dataLength;
-                    int newDataLen = (getValue(col) + "").length()  * 2;
+                    Integer newDataLen = (getValue(col) + "").length()  * 2;
                     this.changeColumn(col, new AttributeType(dbAttr.dataType, newDataLen));
+
                     System.out.println("[" + getClass().getSimpleName() + "#save] error col \"" + col
                             + "\": currentInScript=" + currentSrc + ", currentInDb=" + currentDb
                             + ", newInDb=" + newDataLen);

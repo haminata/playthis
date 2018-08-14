@@ -102,6 +102,7 @@ class Musicroom extends DbModel {
         super(props || {})
         this.form = React.createRef();
         window.newroom = this;
+        this.state.searchQuerySong = null
     }
 
     get createdBy() {
@@ -315,13 +316,30 @@ class Musicroom extends DbModel {
         ])
     }
 
+    onTrackIdChange(event){
+        this.trackId = event.target.value.trim();
+    }
+
     renderView(){
         let songs = _.map(this.state.songs || [], (s) => {
             return _.merge(s, {viewFormat: VIEW_FORMAT.LIST_ITEM});
         })
 
+        if(this.state.searchQuerySong){
+            let term = this.state.searchQuerySong.toLowerCase()
+            songs = _.filter(songs, (song) => {
+                return _.includes(((song.title || '') + (song.artistName || '')).toLowerCase(), term)
+            })
+        }
+
+        let style = {width: '100px'}
         return e.div({className: 'container', style: {}}, [
-            e.div({className: ''}, "Now Playing..."),
+            e.div({className: 'row'}, [
+                e.div({className: "col-md-2"}, "Now Playing..."),
+                e.div({className: "col-md-6"}, e.input({placeholder: 'Enter Spotify track', className: 'form-control', onChange: this.onTrackIdChange})),
+                e.div({className: "col-md-2"}, e.button({style, className: 'btn btn-success', onClick: () => app.play(this.trackId)}, 'Play')),
+                e.div({className: "col-md-2"}, e.button({style, className: 'btn btn-dark', onClick: () => app.pause(this.trackId)}, 'Pause')),
+            ]),
             e.br(),
             e(ModelCollection, {modelsProps: songs, model: Song, viewFormat: VIEW_FORMAT.LIST_ITEM})
         ])

@@ -66,9 +66,9 @@ public class Utils {
         return JsonParser.parseDoc(body);
     }
 
-    public static Date extractDate(DbDoc json, String attrCreatedAt) {
+    public static Date extractDate(DbDoc json, String attrCreatedAt, Date defaultValue) {
         JsonString v = (JsonString) json.get(attrCreatedAt);
-        if(v == null || v.getString().trim().isEmpty()) return null;
+        if(v == null || v.getString().trim().isEmpty()) return defaultValue;
 
         return Timestamp.valueOf(v.getString());
     }
