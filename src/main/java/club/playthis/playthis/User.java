@@ -71,20 +71,13 @@ class User extends DbModel {
     }
 
     public static void main(String[] args) {
-//        new User().syncTable();
-//        User s = new User();
-//        s.update(new DbDocImpl(){{
-//            put("email", new JsonString(){{
-//                setValue("hawa@camara.com");
-//            }});
-//            put("name", new JsonString(){{
-//                setValue("Hawa Camara");
-//            }});
-//            put("gender", new JsonString(){{
-//                setValue("F");
-//            }});
-//        }});
-//        s.save();
+        new User().syncTable();
+        User s = new User();
+        s.update(new Utils.Json()
+                .add("email", "hawa@camara.com")
+                .add("name", "Hawa Camara")
+                .add("gender", "F"));
+        s.save();
         System.out.println(User.all(User.class));
     }
 }

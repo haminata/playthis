@@ -779,44 +779,6 @@ public abstract class DbModel {
         return jsonArray;
     }
 
-    public static String templateFileName(Class<?> cls, String format){
-        String clsName = cls.getSimpleName();
-
-        if(format != null && !format.startsWith(".") && format.trim().length() >= 1){
-            format = "." + format;
-        }
-        format = format == null ? "" : format;
-
-        return clsName.toLowerCase() + format + ".html";
-    }
-
-    public static String templateFileName(Class<?> cls){
-        return templateFileName(cls, null);
-    }
-
-    public String getDefaultTemplate(String format){
-        String defaultView = Utils.readFile("views/" + DbModel.templateFileName(DbModel.class, format));
-
-        if(defaultView == null){
-            defaultView = Utils.formFromSchema((DbDoc) DbModel.schemas().get(this.getClass().getSimpleName()));
-        }
-
-        return defaultView;
-    }
-
-    public String getDefaultTemplate(){
-        return getDefaultTemplate(null);
-    }
-
-    public String getTemplate(){
-        return getTemplate(null);
-    }
-
-    public String getTemplate(String format){
-        String view = Utils.readFile("views/" + DbModel.templateFileName(this.getClass(), format) );
-        return view == null ? getDefaultTemplate(format) : view;
-    }
-
     public static DbDoc schemas() {
         DbDoc json = new DbDocImpl();
         for (Map.Entry<String, Class<? extends DbModel>> e: CLASSES.entrySet()){
@@ -862,6 +824,20 @@ public abstract class DbModel {
 
     static class Where extends HashMap<String, String> {
         public static final Where EMPTY = new Where();
+
+        public Where(){
+            super();
+        }
+
+        public Where(String key, String value){
+            put(key, value);
+        }
+
+        public Where and(String key, String value){
+            put(key, value);
+            return this;
+        }
+
     }
 
     public static void main(String[] args) {

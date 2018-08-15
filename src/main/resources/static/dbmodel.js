@@ -295,7 +295,7 @@ class Musicroom extends DbModel {
     renderGridItem(){
         const style = {
             backgroundColor: this.name,
-            maxHeight: '20vh',
+            //maxHeight: '20vh',
             marginTop: '16px'
         };
         let key = `${this.constructor.name}_${this.state.id}`;

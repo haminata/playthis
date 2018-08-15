@@ -27,7 +27,7 @@ class ModelCollection extends React.Component {
             let style = {};
 
             if (this.viewFormat === VIEW_FORMAT.GRID_ITEM) {
-                return e('div', {key, className: 'col-md-4 col-lg-4 col-sm-6', style}, [el]);
+                return el;//e('div', {key, className: 'col-md-4 col-lg-4 col-sm-6', style}, [el]);
             } else {
                 return e.li({key, className: "list-group-item"}, [el])
             }
@@ -38,7 +38,7 @@ class ModelCollection extends React.Component {
 
         if (this.viewFormat === VIEW_FORMAT.GRID_ITEM) {
             return e.div({className: 'container'},
-                e.div({className: 'row'}, elems)
+                e.div({className: 'card-columns'}, elems)
             );
         }else {
             return e.ul({className: 'list-group list-group-flush'}, elems);

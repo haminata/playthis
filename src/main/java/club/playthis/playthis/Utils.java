@@ -32,6 +32,30 @@ public class Utils {
         return fileData;
     }
 
+    public static class Json extends DbDocImpl {
+
+        public Json(String key, String value){
+            add(key, value);
+        }
+
+        public Json(){}
+
+        public Json add(String key, String value){
+            put(key, new JsonString(){{
+                setValue(value);
+            }});
+            return this;
+        }
+
+        public Json add(String key, Integer value){
+            put(key, new JsonNumber(){{
+                setValue(value.toString());
+            }});
+            return this;
+        }
+
+    }
+
     public static <T extends DbModel> DbDoc responseJson(ArrayList<T> models){
         DbDoc doc = new DbDocImpl();
         doc.put("data", DbModel.manyToJson(models));
