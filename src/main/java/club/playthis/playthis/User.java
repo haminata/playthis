@@ -1,10 +1,7 @@
 package club.playthis.playthis;
 
 import club.playthis.playthis.DbModel;
-import com.mysql.cj.xdevapi.DbDoc;
-import com.mysql.cj.xdevapi.JsonNumber;
-import com.mysql.cj.xdevapi.JsonParser;
-import com.mysql.cj.xdevapi.JsonString;
+import com.mysql.cj.xdevapi.*;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -31,7 +28,7 @@ class User extends DbModel {
             put("name", AttributeType.STRING);
             put("gender", AttributeType.CHARACTER);
             put("password_hash", AttributeType.STRING);
-            put(ATTR_SPOTIFY_ACCESSTOKEN, AttributeType.TEXT);
+            put(ATTR_SPOTIFY_ACCESSTOKEN, new AttributeType(AttributeType.DATA_TYPE_STRING, 2500));
         }};
     }
 
@@ -74,7 +71,21 @@ class User extends DbModel {
     }
 
     public static void main(String[] args) {
-        new User().syncTable();
+//        new User().syncTable();
+//        User s = new User();
+//        s.update(new DbDocImpl(){{
+//            put("email", new JsonString(){{
+//                setValue("hawa@camara.com");
+//            }});
+//            put("name", new JsonString(){{
+//                setValue("Hawa Camara");
+//            }});
+//            put("gender", new JsonString(){{
+//                setValue("F");
+//            }});
+//        }});
+//        s.save();
+        System.out.println(User.all(User.class));
     }
 }
 

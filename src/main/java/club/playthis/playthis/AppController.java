@@ -34,9 +34,12 @@ public class AppController {
 
     @GetMapping("/spotify_token")
     public String getSpotify(){
-        return User.findOne(User.class, new DbModel.Where(){{
+        User.Accesstoken tkn = User.findOne(User.class, new DbModel.Where(){{
             put(DbModel.ATTR_ID, "1");
-        }}).spotifyAccesstoken().raw.toFormattedString();
+        }}).spotifyAccesstoken();
+
+        if(tkn == null) return "{}";
+        return tkn.raw.toFormattedString();
     }
 
     public static final String CLIENT_ID = "e3966e30011d4895997ce89c797de5a5";

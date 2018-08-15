@@ -10,11 +10,13 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 })
 public class PlaythisApplication {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IllegalAccessException, InstantiationException {
 
         DbModel.register(User.class);
         DbModel.register(Musicroom.class);
         DbModel.register(Song.class);
+
+        DbModel.syncAll();
 
         SpringApplication.run(PlaythisApplication.class, args);
     }

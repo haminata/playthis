@@ -32,15 +32,26 @@ public class Song extends DbModel {
     public static void main(String[] args) {
         Song s = new Song();
         s.syncTable();
+//        s.update(new DbDocImpl(){{
+//            put("title", new JsonString(){{
+//                setValue("2Face");
+//            }});
+//            put("artist_name", new JsonString(){{
+//                setValue("True love");
+//            }});
+//            put("thumbnail_url", new JsonString(){{
+//                setValue("https://i2.wp.com/retrojamz.com/wp-content/uploads/2016/11/2face1-1.jpg?fit=305%2C304&ssl=1");
+//            }});
+//        }});
         s.update(new DbDocImpl(){{
             put("title", new JsonString(){{
-                setValue("2Face");
+                setValue("Shayo");
             }});
             put("artist_name", new JsonString(){{
-                setValue("True love");
+                setValue("Bigiano");
             }});
             put("thumbnail_url", new JsonString(){{
-                setValue("https://i2.wp.com/retrojamz.com/wp-content/uploads/2016/11/2face1-1.jpg?fit=305%2C304&ssl=1");
+                setValue("https://i1.wp.com/thenetng.net/wp-content/uploads/2012/11/Bigiano.jpg");
             }});
         }});
         s.save();

@@ -55,6 +55,12 @@ public abstract class DbModel {
     public static final HashMap<String, Class<? extends DbModel>> CLASSES = new HashMap<>();
     public static final HashMap<String, Class<? extends DbModel>> PLURAL_NAME_CLASS = new HashMap<>();
 
+    public static Set<Class<? extends DbModel>> modelClasses(){
+        return new HashSet<Class<? extends DbModel>>(){{
+            addAll(CLASSES.values());
+        }};
+    }
+
     /**
      * Test if a given attribute name is an audit attribute name
      * @param attrName
@@ -847,6 +853,12 @@ public abstract class DbModel {
         return json;
     }
 
+    public static void syncAll() throws IllegalAccessException, InstantiationException {
+        for (Class<? extends DbModel> cls :
+                DbModel.modelClasses()) {
+            cls.newInstance().syncTable();
+        }
+    }
 
     static class Where extends HashMap<String, String> {
         public static final Where EMPTY = new Where();
