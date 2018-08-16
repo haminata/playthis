@@ -163,7 +163,8 @@ class Musicroom extends DbModel {
     }
 
     onCancel() {
-        app.setState({newMusicroom: null})
+        app.newMusicroom = null
+        app.selectedRoom = null
     }
 
     onUserAdminChange(event) {
@@ -287,12 +288,12 @@ class Musicroom extends DbModel {
                             type: 'button',
                             className: 'btn btn-primary',
                             onClick: this.onPublish.bind(this)
-                        }, 'Publish')
+                        }, this.state.id ? 'Update' : 'Publish')
                     ]),
                     e.div({className: 'col-sm-2'}, [
                         e.button({
                             type: 'button',
-                            className: 'btn btn-link text-danger',
+                            className: 'btn btn-link text-danger pull-left',
                             onClick: this.onCancel.bind(this)
                         }, 'Cancel')
                     ])
@@ -332,6 +333,7 @@ class Musicroom extends DbModel {
 
     onTrackIdChange(event){
         this.trackId = event.target.value.trim();
+        this.setState({trackId: this.trackId})
     }
 
     renderView(){
@@ -350,9 +352,9 @@ class Musicroom extends DbModel {
         return e.div({className: 'container', style: {}}, [
             e.div({className: 'row'}, [
                 e.div({className: "col-md-2"}, "Now Playing..."),
-                e.div({className: "col-md-6"}, e.input({placeholder: 'Enter Spotify track', className: 'form-control', onChange: this.onTrackIdChange.bind(this)})),
-                e.div({className: "col-md-2"}, e.button({style, className: 'btn btn-success', onClick: () => app.play(this.trackId)}, 'Play')),
-                e.div({className: "col-md-2"}, e.button({style, className: 'btn btn-dark', onClick: () => app.pause(this.trackId)}, 'Pause')),
+                // e.div({className: "col-md-6"}, e.input({value: this.trackId, placeholder: 'Enter Spotify track', className: 'form-control', onChange: this.onTrackIdChange.bind(this)})),
+                // e.div({className: "col-md-2"}, e.button({style, className: 'btn btn-success', onClick: () => app.play(this.trackId)}, 'Play')),
+                // e.div({className: "col-md-2"}, e.button({style, className: 'btn btn-dark pull-left', onClick: () => app.pause(this.trackId)}, 'Pause')),
             ]),
             e.br(),
             e(ModelCollection, {modelsProps: songs, model: Song, viewFormat: VIEW_FORMAT.LIST_ITEM})
@@ -372,12 +374,18 @@ class Song extends DbModel {
 
     render(){
 
+        let onClick = () => {
+            if(!this.state.uri) return
+            app.play(this.state.uri)
+            app.musicroomView.setState({tradeId: this.state.uri})
+        }
+
         return e.div({}, [
+            e.button({className: 'btn btn-link btn-lg text-primary pull-right', onClick: onClick}, 'Play'),
             e.img({src: this.state.thumbnailUrl, alt: this.state.title, className: 'rounded float-left', height: '80px', width: '80px', marginRight: '8px'}),
             e.h3({style: {marginLeft: '100px'}}, [`${this.state.title}`,
                 e.small({className: 'text-muted', style: {marginLeft: '4px'}}, `by ${this.state.artistName}`)
             ]),
-
         ])
     }
 }

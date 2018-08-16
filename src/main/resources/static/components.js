@@ -16,7 +16,7 @@ class ModelCollection extends React.Component {
 
     constructor(props) {
         super(props || {})
-        this.viewFormat = props.viewFormat || VIEW_FORMAT.GRID_ITEM
+        this.viewFormat = this.props.viewFormat || VIEW_FORMAT.GRID_ITEM
     }
 
     render() {
@@ -35,13 +35,13 @@ class ModelCollection extends React.Component {
         });
 
 
-
+        let opts = _.omit(this.props, ['modelsProps', 'model'])
         if (this.viewFormat === VIEW_FORMAT.GRID_ITEM) {
-            return e.div({className: 'container'},
+            return e.div(_.merge(opts, {className: 'container'}),
                 e.div({className: 'card-columns'}, elems)
             );
-        }else {
-            return e.ul({className: 'list-group list-group-flush'}, elems);
+        } else {
+            return e.ul(_.merge(opts, {className: 'list-group list-group-flush'}), elems);
         }
     }
 
@@ -50,7 +50,12 @@ class ModelCollection extends React.Component {
 class Navbar extends React.Component {
 
     onCreateMusicroom() {
-        app.setState({newMusicroom: _.merge(app.state.newMusicroom || {}, {viewFormat: VIEW_FORMAT.FULL, editMode: true})})
+        app.setState({
+            newMusicroom: _.merge(app.state.newMusicroom || {}, {
+                viewFormat: VIEW_FORMAT.FULL,
+                editMode: true
+            })
+        })
     }
 
     onSignIn() {
@@ -110,15 +115,37 @@ class Toolbar extends React.Component {
     }
 
     onChange() {
-        console.log('[input]', this.input.current.value);
-        if(app.musicroomView) app.musicroomView.setState({searchQuerySong: this.input.current.value})
-        else app.setState({searchQueryMusicroom: this.input.current.value});
+        let term = this.input.current.value
+        //console.log('[input]', );
+        if (app.musicroomView){
+            app.musicroomView.setState({searchQuerySong: this.input.current.value})
+
+            if(!_.isEmpty(term)) {
+                app.searchTracks(term).then((res) => {
+
+                    //searchTracks.cancel()
+
+                    console.log('[searchTracks]', res)
+                    let tracks = _.map(res.tracks.items, (i) => {
+                        let imgUrl = i.album.images[2].url;
+                        return _.merge({title: i.name, spotifyUri: i.uri, thumbnailUrl: imgUrl, artistName: i.artists[0].name}, i)
+                    })
+                    this.setState({dropdownModels: tracks})
+                })
+            } else {
+                this.setState({dropdownModels: []})
+            }
+
+        } else {
+            app.setState({searchQueryMusicroom: this.input.current.value});
+        }
     }
 
     render() {
-        return e.div({className: "alert alert-warning rounded-0", role: "alert"}, [
+        let style = {}//{maxHeight: '78px'}
+        return e.div({className: "alert alert-warning rounded-0", style, role: "alert"}, [
             e.div({className: 'container'}, [
-                e.div({className: 'input-group input-group-lg w-100'}, [
+                e.div({className: 'input-group input-group-lg w-100', style: {position: 'relative'}}, [
                     e.span({className: 'input-group-prepend border-light'}, [
                         e.div({className: 'input-group-text border bg-light'}, [
                             e.i({className: 'fa fa-search'}),
@@ -132,7 +159,29 @@ class Toolbar extends React.Component {
                         //value: app.musicroomView ? app.state.searchQueryMusicroom : app.state.searchQuerySong,
                         onChange: this.onChange.bind(this)
                     }),
-                    e(ModelCollection, {modelsProps: this.state.dropdownModels || [], model: Song})
+                    e.div({
+                            className: 'border rounded shadow-lg p-3 mb-5 bg-white',
+                            style: {
+                                display: _.isEmpty(this.state.dropdownModels) ? 'none' : 'block',
+                                position: 'absolute',
+                                backgroundColor: 'white',
+                                width: '100%',
+                                top: 'calc(100% + 16px)',
+                                maxHeight: '50vh',
+                                overflow: 'scroll',
+                                left: '0',
+                                zIndex: 100
+                            }
+                        },
+                        e(ModelCollection, {
+                            modelsProps: this.state.dropdownModels || [],
+                            viewFormat: VIEW_FORMAT.LIST_ITEM,
+                            model: Song,
+                            style: {
+                                width: '100%',
+                            },
+                        })),
+
                 ])
             ])
         ]);

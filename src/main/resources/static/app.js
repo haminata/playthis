@@ -1,4 +1,4 @@
-console.log ("Hello world");
+console.log("Hello world");
 
 _.merge(WebSocket.prototype, Object.create(EventEmitter.prototype))
 
@@ -9,8 +9,9 @@ class AppView extends React.Component {
         EventEmitter.call(this);
 
         this.deferreds = {};
-        this.retryCount = {server: 0}
+        this.retryCount = {server: 0};
         this.models = {};
+        this.tokens = null;
 
         this.state = {
             user: null,
@@ -23,72 +24,83 @@ class AppView extends React.Component {
         }
     }
 
-    getSpotifyOAuthToken(){
+    searchTracks(term) {
+        return this.spotify(`search?q=${encodeURIComponent(term)}&type=track&limit=16`, {method: 'GET'})
+    }
+
+    getSpotifyOAuthToken() {
         return this.getJson("spotify_token").then((tokens) => {
-            if(_.isPlainObject(tokens)) return toCamelCase(tokens);
+            if (_.isPlainObject(tokens)) {
+                this.tokens = toCamelCase(tokens);
+                return this.tokens;
+            }
         })
     }
 
-    set newMusicroom(m){
+    set newMusicroom(m) {
         let old = this.newMusicroom
         this.setState({newMusicroom: m})
 
-        if(_.isPlainObject(old) && m == null){
+        if (_.isPlainObject(old) && m == null) {
 
         }
 
-        if(m === null) this._room = null
+        if (m === null) this._room = null
     }
 
-    set selectedRoom(room){
-        if(room == null) return this.setState({selectedRoom: null})
+    set selectedRoom(room) {
+        if (room == null) return this.setState({selectedRoom: null})
         this.setState({selectedRoom: room})
     }
 
-    set musicroomView(room){
-        if(room.state && this.state.selectedRoom && this.state.selectedRoom.id === room.state.id) this._room = room
+    set musicroomView(room) {
+        if (room.state && this.state.selectedRoom && this.state.selectedRoom.id === room.state.id) this._room = room
     }
 
-    get musicroomView(){
+    get musicroomView() {
         return this._room
     }
 
-    get newMusicroom(){
+    get newMusicroom() {
         return this.state.newMusicroom
     }
 
-    play(spotify_uri){
-        spotify_uri = spotify_uri || 'spotify:track:4eTgQdjd7bIet6d045GGUc'
-        return this.getSpotifyOAuthToken().then(tokens => {
+    spotify(endpoint, opt) {
+        return this.getSpotifyOAuthToken()
+            .then(tokens => {
+                let method = (opt || {}).method || 'PUT'
 
-            return fetch(`https://api.spotify.com/v1/me/player/play?device_id=${this.spotifyPlayer._options.id}`, {
-                method: 'PUT',
-                body: JSON.stringify({ uris: [spotify_uri] }),
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${tokens.accessToken}`
-                },
-            });
-        })
+                let fetchOpts = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${tokens.accessToken}`
+                    },
+                }
+
+                if(_.includes(['PUT', 'HEAD'], method.toUpperCase()) && _.isObject(opt)){
+
+                    //uris: [spotify_uri]
+                    fetchOpts.body = JSON.stringify(opt)
+                }
+                let bar = _.includes(endpoint, '?') ? '&' : '?';
+                let url = `https://api.spotify.com/v1/${endpoint}${bar}device_id=${this.spotifyPlayer._options.id}`
+                return fetch(url, fetchOpts).then(r => r.json());
+            })
     }
 
-    pause(spotify_uri){
+    play(spotify_uri) {
         spotify_uri = spotify_uri || 'spotify:track:4eTgQdjd7bIet6d045GGUc'
-        return this.getSpotifyOAuthToken().then(tokens => {
-
-            return fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${this.spotifyPlayer._options.id}`, {
-                method: 'PUT',
-                body: JSON.stringify({ uris: [spotify_uri] }),
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${tokens.accessToken}`
-                },
-            });
-        })
+        return this.spotify('me/player/play', {uris: [spotify_uri]})
     }
 
-    get spotifyPlayer(){
-        if(!this._spotifyPlayer){
+    pause(spotify_uri) {
+        spotify_uri = spotify_uri || 'spotify:track:4eTgQdjd7bIet6d045GGUc'
+        return this.spotify('me/player/pause', {uris: [spotify_uri]})
+    }
+
+    get spotifyPlayer() {
+        if (!this._spotifyPlayer) {
             this._spotifyPlayer = new Spotify.Player({
                 name: 'PlayThis',
                 getOAuthToken: (cb) => {
@@ -105,10 +117,10 @@ class AppView extends React.Component {
         return this._spotifyPlayer
     }
 
-    initSpotify(){
+    initSpotify() {
         //if(window.onSpotifyWebPlaybackSDKReady) return
 
-        if(!window.onSpotifyWebPlaybackSDKReadyCalled) {
+        if (!window.onSpotifyWebPlaybackSDKReadyCalled) {
             console.log('[spotify] initialising player deferred')
             return setTimeout(this.initSpotify.bind(this), 250);
         }
@@ -121,21 +133,31 @@ class AppView extends React.Component {
         let spotifyPlayer = this.spotifyPlayer
 
         // Error handling
-        spotifyPlayer.addListener('initialization_error', ({ message }) => { console.error(message); });
-        spotifyPlayer.addListener('authentication_error', ({ message }) => { console.error(message); });
-        spotifyPlayer.addListener('account_error', ({ message }) => { console.error(message); });
-        spotifyPlayer.addListener('playback_error', ({ message }) => { console.error(message); });
+        spotifyPlayer.addListener('initialization_error', ({message}) => {
+            console.error(message);
+        });
+        spotifyPlayer.addListener('authentication_error', ({message}) => {
+            console.error(message);
+        });
+        spotifyPlayer.addListener('account_error', ({message}) => {
+            console.error(message);
+        });
+        spotifyPlayer.addListener('playback_error', ({message}) => {
+            console.error(message);
+        });
 
         // Playback status updates
-        spotifyPlayer.addListener('player_state_changed', state => { console.log('[player_state_changed]', state); });
+        spotifyPlayer.addListener('player_state_changed', state => {
+            console.log('[player_state_changed]', state);
+        });
 
         // Ready
-        spotifyPlayer.addListener('ready', ({ device_id }) => {
+        spotifyPlayer.addListener('ready', ({device_id}) => {
             console.log('Ready with Device ID', device_id);
         });
 
         // Not Ready
-        spotifyPlayer.addListener('not_ready', ({ device_id }) => {
+        spotifyPlayer.addListener('not_ready', ({device_id}) => {
             console.log('Device ID has gone offline', device_id);
         });
 
@@ -192,13 +214,16 @@ class AppView extends React.Component {
         let mKey = 'maincontent_default'
 
         if (_.isPlainObject(this.state.newMusicroom)) {
-            mainContent = e(Musicroom, Object.assign( {
+            mainContent = e(Musicroom, Object.assign({
                 viewFormat: VIEW_FORMAT.FULL,
                 editMode: true
             }, this.state.newMusicroom));
             mKey = 'maincontent_edit_music'
         } else if (this.state.selectedRoom) {
-            mainContent = e(Musicroom, Object.assign({viewFormat: VIEW_FORMAT.FULL, editMode: false}, this.state.selectedRoom));
+            mainContent = e(Musicroom, Object.assign({
+                viewFormat: VIEW_FORMAT.FULL,
+                editMode: false
+            }, this.state.selectedRoom));
         } else {
             mainContent = e(ModelCollection, {
                 model: Musicroom,
@@ -229,11 +254,11 @@ class AppView extends React.Component {
         setTimeout(() => this.connectToServer(), 1000 * app.retryCount.server)
     }
 
-    get navbar(){
+    get navbar() {
         return window.appNavbar
     }
 
-    get toolbar(){
+    get toolbar() {
         return window.appToolbar
     }
 
