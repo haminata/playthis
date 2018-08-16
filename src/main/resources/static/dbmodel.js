@@ -132,7 +132,16 @@ class Musicroom extends DbModel {
         let data = this.data
         app.server.json('/create_room', data, {busy: true})
             .then((response) => {
-                console.log('[onPublish] ', response)
+                console.log('[create_room] ', response)
+                let existing = _.find(app.state.musicrooms, {id: response.data.id})
+
+                if(_.isObject(existing)) _.merge(existing, response.data)
+                else app.state.musicrooms.unshift(response.data)
+
+                app.setState({musicrooms: app.state.musicrooms})
+
+                app.newMusicroom = null;
+                app.selectedRoom = null;
             })
     }
 
@@ -301,8 +310,12 @@ class Musicroom extends DbModel {
         let key = `${this.constructor.name}_${this.state.id}`;
 
         let onJoinClick = () => {
-            app.selectedRoom = this.state;
+            app.selectedRoom = _.merge(this.state, {viewFormat: VIEW_FORMAT.FULL, editMode: false});
         };
+
+        let onEditClick = () => {
+            app.selectedRoom = _.merge(this.state, {viewFormat: VIEW_FORMAT.FULL, editMode: true});
+        }
 
         return e.div({style, key, className: 'card'}, [
             //e.img({className: 'card-img-top', alt: 'Card image cap', src: ".../100px180/"}),
@@ -312,6 +325,7 @@ class Musicroom extends DbModel {
                 e.h6({className: 'card-subtitle mb-2 text-muted'}, `By ${this.createdBy.name}`),
                 e.p({className: 'card-text'}, this.state.description || 'No description'),
                 e.a({className: 'card-link', href: '#', onClick: onJoinClick}, 'Join'),
+                e.a({className: 'card-link text-success', href: '#', onClick: onEditClick}, 'Edit'),
             ])
         ])
     }

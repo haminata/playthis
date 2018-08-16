@@ -50,7 +50,7 @@ class ModelCollection extends React.Component {
 class Navbar extends React.Component {
 
     onCreateMusicroom() {
-        app.setState({newMusicroom: app.state.newMusicroom || {}})
+        app.setState({newMusicroom: _.merge(app.state.newMusicroom || {}, {viewFormat: VIEW_FORMAT.FULL, editMode: true})})
     }
 
     onSignIn() {
@@ -129,6 +129,7 @@ class Toolbar extends React.Component {
                         className: 'form-control py-2 border-left-0 border rounded-right bg-light',
                         placeholder: this.searchPlaceholder,
                         ref: this.input,
+                        //value: app.musicroomView ? app.state.searchQueryMusicroom : app.state.searchQuerySong,
                         onChange: this.onChange.bind(this)
                     }),
                     e(ModelCollection, {modelsProps: this.state.dropdownModels || [], model: Song})

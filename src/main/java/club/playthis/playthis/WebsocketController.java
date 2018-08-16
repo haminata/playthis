@@ -76,6 +76,14 @@ public class WebsocketController extends TextWebSocketHandler {
             return "Message(" + topicUrl + ", " + bodyStr + ")";
         }
 
+        public WsMessage update(DbDoc j){
+            for (Map.Entry<String, JsonValue> v :
+                    j.entrySet()) {
+                this.body.add(v.getKey(), v.getValue());
+            }
+            return this;
+        }
+
         public TextMessage toTextMsg() {
             DbDoc json = new DbDocImpl();
             JsonValue v = topicUrl != null ? new JsonString() {{
@@ -111,7 +119,7 @@ public class WebsocketController extends TextWebSocketHandler {
 
         switch (obj.getTopic()){
             case TOPIC_CREATE_ROOM:
-                obj.body.put("data", createRoom(obj.body).toJson());
+                obj.update(createRoom(obj.body).toJson());
                 break;
             case TOPIC_SUBSCRIBE:
                 obj.body.put("subscribed", new JsonString(){{

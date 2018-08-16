@@ -42,7 +42,7 @@ class AppView extends React.Component {
 
     set selectedRoom(room){
         if(room == null) return this.setState({selectedRoom: null})
-        this.setState({selectedRoom: Object.assign(room, {viewFormat: VIEW_FORMAT.FULL})})
+        this.setState({selectedRoom: room})
     }
 
     set musicroomView(room){
