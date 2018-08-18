@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 public class DbModelController {
 
     @GetMapping("/{modelName}")
-    public String findByTitle(@PathVariable String modelName) {
+    public String getAll(@PathVariable String modelName) {
         System.out.println("[plural model] " + modelName);
         Class<? extends DbModel> cls = DbModel.getModelPluralNames().get(modelName);
         if(cls != null) return Utils.responseJson(DbModel.all(cls)).toFormattedString();

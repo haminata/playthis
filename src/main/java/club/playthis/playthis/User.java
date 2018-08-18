@@ -15,6 +15,8 @@ import java.util.HashMap;
 class User extends DbModel {
 
     public static final String ATTR_SPOTIFY_ACCESSTOKEN = "spotify_accesstoken";
+    public static final String ATTR_NAME = "name";
+    public static final String ATTR_PASSWORD_HASH = "password_hash";
 
     @Override
     public String getModelNamePlural() {

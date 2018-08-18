@@ -85,11 +85,17 @@ class Navbar extends React.Component {
             //<button class="btn btn-outline-success my-2 my-sm-0 ml-2" data-emit-click="create_room">Create Room</button>
             e.ul({className: 'nav nav-tab navbar-nav mr-auto'}),
             e.button({
-                className: 'btn btn-outline-success my-2 my-sm-0 ml-2',
+                className: 'btn btn-outline-primary my-2 my-sm-0 ml-2',
                 onClick: this.onCreateMusicroom.bind(this)
             }, 'Create Room'),
             e.a({
                 href: '/spotify_login',
+                role: "button",
+                className: 'btn btn-outline-success my-2 my-sm-0 ml-2',
+                onClick: this.onSignIn.bind(this)
+            }, 'Connect to Spotify'),
+            e.a({
+                href: '/login',
                 className: 'btn btn-link my-2 my-sm-0 ml-2',
                 onClick: this.onSignIn.bind(this)
             }, 'Sign In')
