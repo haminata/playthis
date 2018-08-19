@@ -3,6 +3,7 @@ package club.playthis.playthis.client;
 
 import club.playthis.playthis.db.DbModel;
 import club.playthis.playthis.db.Musicroom;
+import club.playthis.playthis.db.Track;
 import com.mysql.cj.xdevapi.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -11,6 +12,7 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.net.URI;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -75,6 +77,8 @@ public class WebsocketController extends TextWebSocketHandler {
         }
 
         public WsMessage update(DbDoc j){
+            if(j == null) return this;
+
             for (Map.Entry<String, JsonValue> v :
                     j.entrySet()) {
                 this.body.add(v.getKey(), v.getValue());
@@ -99,6 +103,10 @@ public class WebsocketController extends TextWebSocketHandler {
     }
 
     public static final String TOPIC_CREATE_ROOM = "/create_room";
+    public static final String TOPIC_GET_ROOM_TRACKS = "/get_room_tracks";
+    public static final String TOPIC_DELETE_ROOM = "/delete_room";
+    public static final String TOPIC_ADD_ROOM_TRACK = "/add_room_track";
+    public static final String TOPIC_GET_OR_CREATE_TRACK = "/get_or_create_track";
     public static final String TOPIC_SUBSCRIBE = "/subscribe";
 
     public Musicroom createRoom(DbDoc json){
@@ -112,10 +120,53 @@ public class WebsocketController extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage textMessage) throws Exception {
         // A message has been received
-        System.out.println("Message received: " + session.getId());
         WsMessage obj = WsMessage.fromTextMsg(textMessage);
+        System.out.println("Message received: " + session.getId() + ", msg:" + obj.body.toFormattedString());
+        Musicroom room;
+        Integer roomId;
 
         switch (obj.getTopic()){
+            case TOPIC_DELETE_ROOM:
+                roomId = ((JsonNumber) obj.body.get("roomId")).getInteger();
+                Musicroom m = Musicroom.findById(Musicroom.class, roomId);
+                if(m != null) {
+                    m.deletedAt = new Date();
+                    m.save();
+                    obj.body.put("room", m.toJson());
+                }
+                break;
+            case TOPIC_GET_OR_CREATE_TRACK:
+                DbDoc data = ((DbDoc) obj.body.get("track"));
+                String artistName = ((JsonString) data.get("artistName")).getString();
+                String title = ((JsonString) data.get(Track.ATTR_TITLE)).getString();
+                System.out.println("Track: " + artistName + ", title: " + title);
+
+                Track t = Track.findOne(Track.class, new DbModel.Where(){{
+                    put(Track.ATTR_ARTIST_NAME, artistName);
+                    put(Track.ATTR_TITLE, title);
+                }});
+
+                if(t == null){
+                    t = new Track();
+                    t.update(data);
+                    t.save();
+                }
+                obj.body.add("track", t.toJson());
+                break;
+            case TOPIC_ADD_ROOM_TRACK:
+                roomId = ((JsonNumber) obj.body.get("roomId")).getInteger();
+                Integer trackId = ((JsonNumber) obj.body.get("trackId")).getInteger();
+
+                room = Musicroom.findById(Musicroom.class, roomId);
+                room.addTrackById(trackId);
+                break;
+            case TOPIC_GET_ROOM_TRACKS:
+                roomId = ((JsonNumber) obj.body.get("roomId")).getInteger();
+
+                room = Musicroom.findById(Musicroom.class, roomId);
+
+                obj.body.add("tracks", DbModel.manyToJson(room.getTracks()));
+                break;
             case TOPIC_CREATE_ROOM:
                 obj.update(createRoom(obj.body).toJson());
                 break;

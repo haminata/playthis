@@ -103,6 +103,8 @@ class Musicroom extends DbModel {
         this.form = React.createRef();
         window.newroom = this;
         this.state.searchQuerySong = null
+        this.state.tracks = []
+        this.container = React.createRef();
     }
 
     get createdBy() {
@@ -154,17 +156,38 @@ class Musicroom extends DbModel {
             this.setState({users: res.data || []})
         })
 
-        if(this.viewFormat === VIEW_FORMAT.FULL && !this.state.editMode) {
-            app.getJson("/db/tracks").then((res) => {
-                console.log('[load songs]', res)
-                this.setState({songs: toCamelCase(res.data || [])})
+        if(this.viewFormat === VIEW_FORMAT.FULL && !this.state.editMode && !this.isNew) {
+            app.server.json("/get_room_tracks", {roomId: this.state.id})
+                .then((res) => {
+                console.log('[got tracks]', res)
+                this.setState({tracks: toCamelCase(res.data.tracks || [])})
             })
         }
+
+        $(this.container.current).on('focusin', () => {
+            console.log('[focus#musicroom]')
+            $(app.toolbar.dropdown.current).hide()
+        })
     }
 
     onCancel() {
         app.newMusicroom = null
         app.selectedRoom = null
+    }
+
+    addTrack(track){
+        console.log('[adding track]', track);
+        app.server.json('/get_or_create_track', {track})
+            .then((res) => {
+                console.log('[get_or_create_track]', res);
+                let track = res.data.track
+                let newTracks = _.concat(this.state.tracks, [toCamelCase(track)])
+                this.setState({tracks: newTracks})
+                return app.server.json('/add_room_track', {roomId: this.state.id, trackId: track.id})
+            })
+            .then((res) => {
+                console.log('[music#addTrack] track added:', res)
+            })
     }
 
     onUserAdminChange(event) {
@@ -318,10 +341,22 @@ class Musicroom extends DbModel {
             app.selectedRoom = _.merge(this.state, {viewFormat: VIEW_FORMAT.FULL, editMode: true});
         }
 
+        let onDeleteRoom = () => {
+            app.server.json("/delete_room", Object.assign({roomId: this.state.id}, this.state))
+                .then((res) => {
+                    console.log('[/delete_room] response:', res)
+                })
+        }
+
         return e.div({style, key, className: 'card'}, [
             //e.img({className: 'card-img-top', alt: 'Card image cap', src: ".../100px180/"}),
             //e.div({className: 'card-header'}, this.props.name || 'No header'),
-            e.div({className: 'card-body'}, [
+            e.div({className: 'card-body show-on-hover-parent'}, [
+                //<button type="button" class="close" aria-label="Close">
+                //<span aria-hidden="true">&times;</span>
+        //</button>
+
+                e.button({type: 'button', onClick: onDeleteRoom, className: 'close show-on-hover'}, e.span({dangerouslySetInnerHTML:{__html: '&times;'}})),
                 e.h5({className: 'card-title', key}, this.state.name || 'No title'),
                 e.h6({className: 'card-subtitle mb-2 text-muted'}, `By ${this.createdBy.name}`),
                 e.p({className: 'card-text'}, this.state.description || 'No description'),
@@ -337,21 +372,14 @@ class Musicroom extends DbModel {
     }
 
     renderView(){
-        let songs = _.map(this.state.songs || [], (s) => {
+        let songs = _.map(this.state.tracks || [], (s) => {
             return _.merge(s, {viewFormat: VIEW_FORMAT.LIST_ITEM});
         })
 
-        if(this.state.searchQuerySong){
-            let term = this.state.searchQuerySong.toLowerCase()
-            songs = _.filter(songs, (song) => {
-                return _.includes(((song.title || '') + (song.artistName || '')).toLowerCase(), term)
-            })
-        }
-
         let style = {width: '100px'}
-        return e.div({className: 'container', style: {}}, [
+        return e.div({className: 'container', tabindex: 0, ref: this.container, style: {outline: 'none'}}, [
             e.div({className: 'row'}, [
-                e.div({className: "col-md-2"}, "Now Playing..."),
+                e.div({className: "col-md-6"}, `Now Playing...${this.state.nowPlayingText || ''}`),
                 // e.div({className: "col-md-6"}, e.input({value: this.trackId, placeholder: 'Enter Spotify track', className: 'form-control', onChange: this.onTrackIdChange.bind(this)})),
                 // e.div({className: "col-md-2"}, e.button({style, className: 'btn btn-success', onClick: () => app.play(this.trackId)}, 'Play')),
                 // e.div({className: "col-md-2"}, e.button({style, className: 'btn btn-dark pull-left', onClick: () => app.pause(this.trackId)}, 'Pause')),
@@ -372,16 +400,35 @@ class Musicroom extends DbModel {
 
 class Track extends DbModel {
 
+    isAddedToRoom(){
+        let existing = _.find(app.musicroomView.state.tracks, {trackId: this.state.trackId})
+        return _.isObject(existing)
+    }
+
     render(){
 
         let onClick = () => {
-            if(!this.state.uri) return
-            app.play(this.state.uri)
-            app.musicroomView.setState({tradeId: this.state.uri})
+            let uri = this.state.uri || this.state.trackId
+            if(!uri) return
+            app.play(uri)
+            app.musicroomView.setState({tradeId: uri})
+            app.musicroomView.setState({nowPlayingText: this.state.title})
         }
 
+        let onAddTrack = () => {
+            app.musicroomView.addTrack(this.state);
+        }
+
+
+        let addBtnStyle = {display: this.isAddedToRoom() ? 'none' : 'block'}
+
         return e.div({}, [
-            e.button({className: 'btn btn-link btn-lg text-primary pull-right', onClick: onClick}, 'Play'),
+            e.button({className: 'btn btn-outline-success pull-right', style: addBtnStyle, onClick: onAddTrack}, 'Add'),
+
+            e.button({className: 'btn btn-link btn-lg text-primary pull-right', onClick: onClick},
+                [app.state.nowPlayingText == this.title || !app.state.nowPlayingText? e.i({className: 'fa-play-circle'}, 'Play') : '']
+            ),
+
             e.img({src: this.state.thumbnailUrl, alt: this.state.title, className: 'rounded float-left', height: '80px', width: '80px', marginRight: '8px'}),
             e.h3({style: {marginLeft: '100px'}}, [`${this.state.title}`,
                 e.small({className: 'text-muted', style: {marginLeft: '4px'}}, `by ${this.state.artistName}`)

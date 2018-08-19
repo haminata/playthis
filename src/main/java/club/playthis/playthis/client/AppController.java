@@ -42,7 +42,7 @@ public class AppController {
     @GetMapping("/spotify_token")
     public String getSpotify(){
         AuthToken tkn = AuthToken.findOne(AuthToken.class, new DbModel.Where(){{
-            put(DbModel.ATTR_ID, "1");
+            put(AuthToken.ATTR_CREATED_BY, "1");
         }});
 
         if(tkn == null) return "{}";

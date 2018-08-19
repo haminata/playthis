@@ -120,6 +120,10 @@ class Toolbar extends React.Component {
         super(props || {});
         this.state = Object.assign({placeholder: 'Search music rooms', dropdownModels: []}, this.props);
         this.input = React.createRef();
+        this.dropdown = React.createRef();
+        this.container = React.createRef();
+
+        this.drowdownFocused = false
     }
 
     get searchPlaceholder() {
@@ -128,6 +132,14 @@ class Toolbar extends React.Component {
 
     componentDidMount() {
         window.appToolbar = this
+        console.log('[input]', this.input.current)
+        let $elem = $(this.input.current)
+
+        $elem.on('focus', () => {
+            if(_.isEmpty(this.state.dropdownModels) || ! app.musicroomView) return
+            $(this.dropdown.current).show()
+        })
+
     }
 
     onChange() {
@@ -144,7 +156,15 @@ class Toolbar extends React.Component {
                     console.log('[searchTracks]', res)
                     let tracks = _.map(res.tracks.items, (i) => {
                         let imgUrl = i.album.images[2].url;
-                        return _.merge({title: i.name, spotifyUri: i.uri, thumbnailUrl: imgUrl, artistName: i.artists[0].name}, i)
+                        return _.merge({title: i.name,
+                            spotifyUri: i.uri,
+                            thumbnailUrl: imgUrl,
+                            thumbnail_url: imgUrl,
+                            trackId: i.id,
+                            track_id: i.id,
+                            artistName: i.artists[0].name,
+                            artist_name: i.artists[0].name,
+                        }, i)
                     })
                     this.setState({dropdownModels: tracks})
                 })
@@ -161,7 +181,7 @@ class Toolbar extends React.Component {
         let style = {}//{maxHeight: '78px'}
         return e.div({className: "alert rounded-0", style, id: 'toolbar', role: "alert"}, [
             e.div({className: 'container'}, [
-                e.div({className: 'input-group input-group-lg w-100', style: {position: 'relative'}}, [
+                e.div({className: 'input-group input-group-lg w-100', ref: this.container, style: {position: 'relative'}}, [
                     e.span({className: 'input-group-prepend border-light'}, [
                         e.div({className: 'input-group-text border bg-light'}, [
                             e.i({className: 'fa fa-search'}),
@@ -177,6 +197,7 @@ class Toolbar extends React.Component {
                     }),
                     e.div({
                             className: 'border rounded shadow-lg p-3 bg-white',
+                            id: 'search_dropdown',
                             style: {
                                 display: _.isEmpty(this.state.dropdownModels) ? 'none' : 'block',
                                 position: 'absolute',
@@ -187,7 +208,8 @@ class Toolbar extends React.Component {
                                 overflow: 'scroll',
                                 left: '0',
                                 zIndex: 100
-                            }
+                            },
+                            ref: this.dropdown,
                         },
                         e(ModelCollection, {
                             modelsProps: this.state.dropdownModels || [],

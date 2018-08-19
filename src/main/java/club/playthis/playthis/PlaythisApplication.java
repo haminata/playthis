@@ -15,7 +15,7 @@ public class PlaythisApplication {
 
         DbModel.register(User.class);
         DbModel.register(Musicroom.class);
-        DbModel.register(RoomTracks.class);
+        DbModel.register(RoomTrack.class);
         DbModel.register(AuthToken.class);
         DbModel.register(Track.class);
 

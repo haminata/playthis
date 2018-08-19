@@ -18,7 +18,7 @@ import java.util.Date;
 public abstract class DbModel {
 
     /**
-     *  Names of general attributes common to all db objects referred to as "Audit" attributes. They are useful for investigations and event tracking.
+     * Names of general attributes common to all db objects referred to as "Audit" attributes. They are useful for investigations and event tracking.
      */
     public static final String ATTR_ID = "id";
     public static final String ATTR_CREATED_AT = "created_at";
@@ -29,7 +29,7 @@ public abstract class DbModel {
     /**
      * collection of above audit attributes
      */
-    public static final ArrayList<String> ATTR_NAMES_AUDIT = new ArrayList<String>(5){{
+    public static final ArrayList<String> ATTR_NAMES_AUDIT = new ArrayList<String>(5) {{
         add(ATTR_ID);
         add(ATTR_CREATED_AT);
         add(ATTR_UPDATED_AT);
@@ -38,7 +38,7 @@ public abstract class DbModel {
     }};
 
     /**
-     *  Classification of database to Java out of sync errors
+     * Classification of database to Java out of sync errors
      */
     public static final String SYNC_ERROR_NOT_FOUND_DB = "MySQL database is missing column(s): "; // attribute existing in Java but missing in MySql db
     public static final String SYNC_ERROR_NOT_FOUND_JAVA = "Java source code is missing attribute(s): "; // MySQL column has columns not present in Java
@@ -58,22 +58,23 @@ public abstract class DbModel {
     public static final HashMap<String, Class<? extends DbModel>> CLASSES = new HashMap<>();
     public static final HashMap<String, Class<? extends DbModel>> PLURAL_NAME_CLASS = new HashMap<>();
 
-    public static Set<Class<? extends DbModel>> modelClasses(){
-        return new HashSet<Class<? extends DbModel>>(){{
+    public static Set<Class<? extends DbModel>> modelClasses() {
+        return new HashSet<Class<? extends DbModel>>() {{
             addAll(CLASSES.values());
         }};
     }
 
     /**
      * Test if a given attribute name is an audit attribute name
+     *
      * @param attrName
      * @return
      */
-    public static Boolean isAuditAttr(String attrName){
+    public static Boolean isAuditAttr(String attrName) {
         return ATTR_NAMES_AUDIT.contains(attrName);
     }
 
-    public static HashMap<String, Class<? extends DbModel>> getModelPluralNames(){
+    public static HashMap<String, Class<? extends DbModel>> getModelPluralNames() {
         return PLURAL_NAME_CLASS;
     }
 
@@ -85,13 +86,14 @@ public abstract class DbModel {
 
     /**
      * TODO - discuss after endpoint walk through
+     *
      * @param cls
      * @param <T>
      */
-    public static <T extends DbModel> void register(Class<T> cls){
+    public static <T extends DbModel> void register(Class<T> cls) {
         boolean exists = CLASSES.containsKey(cls.getSimpleName());
 
-        if(!exists){
+        if (!exists) {
             CLASSES.put(cls.getSimpleName(), cls);
             CLASSES.put(cls.getSimpleName().toLowerCase(), cls);
 
@@ -107,6 +109,7 @@ public abstract class DbModel {
 
     /**
      * Getter method for database connection. Returns cached connection if one exists otherwise creates a new connection
+     *
      * @return
      */
     public Connection getConnection() {
@@ -124,6 +127,7 @@ public abstract class DbModel {
 
     /**
      * Used by getConnection to instantiate new SQL connection object
+     *
      * @param database
      * @param user
      * @param password
@@ -142,7 +146,7 @@ public abstract class DbModel {
         return null;
     }
 
-    public static <T extends DbModel> T instance(Class<T> cls){
+    public static <T extends DbModel> T instance(Class<T> cls) {
         try {
             return cls.newInstance();
         } catch (Exception e) {
@@ -151,7 +155,7 @@ public abstract class DbModel {
         }
     }
 
-    public String getModelName(){
+    public String getModelName() {
         return getClass().getSimpleName();
     }
 
@@ -160,34 +164,34 @@ public abstract class DbModel {
         attrs = attrs == null ? new HashMap<>() : attrs;
         DbDoc doc = new DbDocImpl();
 
-        doc.add("type", new JsonString(){{
+        doc.add("type", new JsonString() {{
             setValue(DbModel.this.getClass().getSimpleName());
         }});
 
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        for (Map.Entry<String, AttributeType> entry: attrs.entrySet()){
+        for (Map.Entry<String, AttributeType> entry : attrs.entrySet()) {
             String attrName = entry.getKey();
 
             Object value = DbModel.isAuditAttr(attrName) ? this.getAuditValue(attrName) : this.getValue(attrName);
 
-            if(value == null){
+            if (value == null) {
                 doc.add(attrName, JsonLiteral.NULL);
                 continue;
             }
 
             AttributeType attrType = entry.getValue();
 
-            if(attrType.isNumber()){
-                doc.add(attrName, new JsonNumber(){{
+            if (attrType.isNumber()) {
+                doc.add(attrName, new JsonNumber() {{
                     this.setValue(value.toString());
                 }});
-            }else if(attrType.isString()){
-                doc.add(attrName, new JsonString(){{
+            } else if (attrType.isString()) {
+                doc.add(attrName, new JsonString() {{
                     this.setValue(value.toString());
                 }});
-            } else if (attrType.isDatetime()){
-                doc.add(attrName, new JsonString(){{
+            } else if (attrType.isDatetime()) {
+                doc.add(attrName, new JsonString() {{
                     this.setValue(format.format(value));
                 }});
             }
@@ -223,7 +227,7 @@ public abstract class DbModel {
      */
     public abstract HashMap<String, AttributeType> getAttributes();
 
-    public Boolean update(ResultSet resultSet){
+    public Boolean update(ResultSet resultSet) {
         try {
             updateAuditFromResultSet(resultSet);
             updateFromResultSet(resultSet);
@@ -234,7 +238,7 @@ public abstract class DbModel {
         }
     }
 
-    public Boolean update(String jsonString){
+    public Boolean update(String jsonString) {
         try {
             DbDoc json = JsonParser.parseDoc(jsonString);
             this.update(json);
@@ -245,7 +249,7 @@ public abstract class DbModel {
         }
     }
 
-    public Boolean update(DbDoc json){
+    public Boolean update(DbDoc json) {
         updateAuditFromJson(json);
         updateFromJson(json);
         return true;
@@ -286,34 +290,43 @@ public abstract class DbModel {
         this.id = resultSet.getInt(ATTR_ID);
     }
 
-    public void updateAuditFromJson(DbDoc json){
-        if(json.containsKey(ATTR_CREATED_AT)) this.createdAt = Utils.extractDate(json, ATTR_CREATED_AT, null);
-        if(json.containsKey(ATTR_UPDATED_AT)) this.updatedAt = Utils.extractDate(json, ATTR_UPDATED_AT, null);
-        if(json.containsKey(ATTR_DELETED_AT)) this.deletedAt = Utils.extractDate(json, ATTR_DELETED_AT, null);
-        if(json.containsKey(ATTR_ACTIVATED_AT)) this.activatedAt = Utils.extractDate(json, ATTR_ACTIVATED_AT, null);
+    public void updateAuditFromJson(DbDoc json) {
+        if (json.containsKey(ATTR_CREATED_AT)) this.createdAt = Utils.extractDate(json, ATTR_CREATED_AT, null);
+        if (json.containsKey(ATTR_UPDATED_AT)) this.updatedAt = Utils.extractDate(json, ATTR_UPDATED_AT, null);
+        if (json.containsKey(ATTR_DELETED_AT)) this.deletedAt = Utils.extractDate(json, ATTR_DELETED_AT, null);
+        if (json.containsKey(ATTR_ACTIVATED_AT)) this.activatedAt = Utils.extractDate(json, ATTR_ACTIVATED_AT, null);
 
-        if(json.containsKey(ATTR_ID)){
-            JsonNumber num = (JsonNumber) json.get(ATTR_ID);
-            this.id = num != null ? num.getInteger() : null;
+        if (json.containsKey(ATTR_ID)) {
+            try{
+
+                JsonNumber num = (JsonNumber) json.get(ATTR_ID);
+                this.id = num != null ? num.getInteger() : null;
+            }catch (Exception e){
+                System.out.println("[" + getClass().getSimpleName() + "] error parsing 'id':" + e);
+            }
         }
     }
 
-    public void updateFromJson(DbDoc json){
+    public void updateFromJson(DbDoc json) {
         HashMap<String, AttributeType> attrs = getResolvedAttributes();
 
-        for (String attrName: json.keySet()) {
-            if(!attrs.containsKey(attrName)) continue;
+        for (String attrName : json.keySet()) {
+            if (!attrs.containsKey(attrName)) continue;
 
             AttributeType attrType = attrs.get(attrName);
             JsonValue v = json.get(attrName);
 
-            if(attrType.isNumber()){
-                values.put(attrName, v != null ? ((JsonNumber) v).getInteger() : null);
-            }else if(attrType.isString()){
-                values.put(attrName, v != null ? ((JsonString) v).getString() : null);
-            }else if(attrType.isDatetime()){
-                Date d = v != null ? Timestamp.valueOf(((JsonString) v).getString()) : null;
-                values.put(attrName, d);
+            try{
+                if (attrType.isNumber()) {
+                    values.put(attrName, v != null ? ((JsonNumber) v).getInteger() : null);
+                } else if (attrType.isString()) {
+                    values.put(attrName, v != null ? ((JsonString) v).getString() : null);
+                } else if (attrType.isDatetime()) {
+                    Date d = v != null ? Timestamp.valueOf(((JsonString) v).getString()) : null;
+                    values.put(attrName, d);
+                }
+            }catch (Exception e){
+                System.err.println("[" + getClass().getSimpleName() + "] adding: " + attrName + ", val: " + v);
             }
 
         }
@@ -322,26 +335,26 @@ public abstract class DbModel {
     public void updateFromResultSet(ResultSet resultSet) throws SQLException {
         for (Map.Entry<String, AttributeType> e : getResolvedAttributes(false).entrySet()) {
 
-            if(e.getValue().isNumber()){
+            if (e.getValue().isNumber()) {
                 Integer val = resultSet.getInt(e.getKey());
                 val = resultSet.wasNull() ? null : val;
                 values.put(e.getKey(), val);
-            }else if(e.getValue().isString()){
+            } else if (e.getValue().isString()) {
                 values.put(e.getKey(), resultSet.getString(e.getKey()));
-            }else if(e.getValue().isDatetime()){
+            } else if (e.getValue().isDatetime()) {
                 values.put(e.getKey(), resultSet.getTimestamp(e.getKey()));
             }
 
         }
     }
 
-    public static <T extends DbModel> T create(Class<T> modelClass, DbDoc json){
+    public static <T extends DbModel> T create(Class<T> modelClass, DbDoc json) {
         T inst = build(modelClass, json);
-        if(inst != null) inst.save();
+        if (inst != null) inst.save();
         return inst;
     }
 
-    public static <T extends DbModel> T build(String modelClassName){
+    public static <T extends DbModel> T build(String modelClassName) {
         T newInst;
         try {
             Class<T> modelClass = (Class<T>) CLASSES.get(modelClassName.trim());
@@ -354,7 +367,7 @@ public abstract class DbModel {
         return newInst;
     }
 
-    public static <T extends DbModel> T build(Class<T> modelClass, DbDoc json){
+    public static <T extends DbModel> T build(Class<T> modelClass, DbDoc json) {
         T newInst;
         try {
             newInst = modelClass.newInstance();
@@ -425,7 +438,7 @@ public abstract class DbModel {
 
         Date updatedAt = new Date();
 
-        if(this.createdAt == null) this.createdAt = new Date();
+        if (this.createdAt == null) this.createdAt = new Date();
         Date createdAt = this.createdAt;
 
         PreparedStatement statement = null;
@@ -437,7 +450,7 @@ public abstract class DbModel {
 
             System.out.println("query: " + sql);
 
-            for (Map.Entry<Integer, String> colEntry: colIdxMap.entrySet()) {
+            for (Map.Entry<Integer, String> colEntry : colIdxMap.entrySet()) {
                 String attrName = colEntry.getValue();
 
                 AttributeType type = attrs.get(attrName);
@@ -480,7 +493,7 @@ public abstract class DbModel {
                     AttributeType dbAttr = getDbAttributes().get(col);
                     Integer currentSrc = attrs.get(col).dataLength;
                     Integer currentDb = dbAttr.dataLength;
-                    Integer newDataLen = (getValue(col) + "").length()  * 2;
+                    Integer newDataLen = (getValue(col) + "").length() * 2;
                     this.changeColumn(col, new AttributeType(dbAttr.dataType, newDataLen));
 
                     System.out.println("[" + getClass().getSimpleName() + "#save] error col \"" + col
@@ -495,7 +508,7 @@ public abstract class DbModel {
 
         } catch (SQLException e) {
             e.printStackTrace();
-        }  finally {
+        } finally {
             this.createdAt = createdAt;
             this.updatedAt = updatedAt;
 
@@ -507,7 +520,7 @@ public abstract class DbModel {
                     if (generatedKeys.next()) {
                         this.id = generatedKeys.getInt(1);
                         success = true;
-                    } else if(this.isNew()) {
+                    } else if (this.isNew()) {
                         throw new SQLException("[" + this.getClass().getSimpleName() + "] save failed, no ID obtained.");
                     }
                 } catch (SQLException e) {
@@ -527,14 +540,14 @@ public abstract class DbModel {
         return val == null || val.isEmpty();
     }
 
-    public boolean changeColumn(String col, AttributeType attr){
+    public boolean changeColumn(String col, AttributeType attr) {
         String sql = "ALTER TABLE " + getTableName() + " MODIFY " + col + " " + attr.toSql() + ";";
-        try(Statement stm = getConnection().createStatement()){
+        try (Statement stm = getConnection().createStatement()) {
             ///stm.setObject();
             System.out.println("[changeColumn] " + sql);
             stm.executeUpdate(sql);
             return true;
-        }catch (SQLException ex){
+        } catch (SQLException ex) {
             ex.printStackTrace();
         }
         return false;
@@ -561,10 +574,10 @@ public abstract class DbModel {
         return models.isEmpty() ? null : models.get(0);
     }
 
-    public static <T extends DbModel> T findById(Class<T> entityClass, Integer id){
-        if(id == null) return null;
+    public static <T extends DbModel> T findById(Class<T> entityClass, Integer id) {
+        if (id == null) return null;
 
-        ArrayList<T> models = find(entityClass, new Where(){{
+        ArrayList<T> models = find(entityClass, new Where() {{
             put(ATTR_ID, id.toString());
         }}, 1);
         return models.isEmpty() ? null : models.get(0);
@@ -574,10 +587,11 @@ public abstract class DbModel {
         where = where == null ? Where.EMPTY : where;
         ArrayList<T> models = new ArrayList<>();
 
-        if(entityClass == null) return models;
+        if (entityClass == null) return models;
 
         String clsName = entityClass.getSimpleName();
         System.out.println("[" + clsName + "] find: " + where);
+        //where.put(ATTR_DELETED_AT, "null");
 
         try {
             T inst = entityClass.newInstance();
@@ -598,6 +612,7 @@ public abstract class DbModel {
                 if (!where.containsKey(e.getKey())) continue;
 
                 if (query.endsWith(tableName) && !query.contains(" WHERE")) query += " WHERE";
+                if (query.contains("=")) query += " AND";
 
                 String value = where.get(e.getKey());
                 switch (e.getValue().dataType) {
@@ -641,8 +656,8 @@ public abstract class DbModel {
 
     protected HashMap<String, Object> values = new HashMap<>();
 
-    public Object getValue(String attributeName){
-        if(ATTR_NAMES_AUDIT.contains(attributeName)) return getAuditValue(attributeName);
+    public Object getValue(String attributeName) {
+        if (ATTR_NAMES_AUDIT.contains(attributeName)) return getAuditValue(attributeName);
         return values.get(attributeName);
     }
 
@@ -668,15 +683,15 @@ public abstract class DbModel {
      *
      * @return
      */
-    public HashMap<String, AttributeType> getResolvedAttributes(boolean includeVirtual){
+    public HashMap<String, AttributeType> getResolvedAttributes(boolean includeVirtual) {
         HashMap<String, AttributeType> attrs = getAttributes();
         attrs = attrs == null ? new HashMap<>() : attrs;
 
-        if(!includeVirtual){
+        if (!includeVirtual) {
             ArrayList<String> virtualCols = new ArrayList<>();
             for (Map.Entry<String, AttributeType> e :
                     attrs.entrySet()) {
-                if(e.getValue().isVirtual) virtualCols.add(e.getKey());
+                if (e.getValue().isVirtual) virtualCols.add(e.getKey());
             }
 
             for (String vCol : virtualCols) {
@@ -693,7 +708,7 @@ public abstract class DbModel {
         return attrs;
     }
 
-    public HashMap<String, AttributeType> getResolvedAttributes(){
+    public HashMap<String, AttributeType> getResolvedAttributes() {
         return getResolvedAttributes(true);
     }
 
@@ -714,7 +729,7 @@ public abstract class DbModel {
             put(SYNC_ERROR_MISMATCH_DATA_TYPE, typeMismatch);
         }};
 
-        try (Statement stmt = getConnection().createStatement()){
+        try (Statement stmt = getConnection().createStatement()) {
 
             String table = getTableName();
 
@@ -742,7 +757,7 @@ public abstract class DbModel {
                 if (typesMatch) typeMismatch.remove(col);
             }
 
-            if(dbColTypes.isEmpty()){
+            if (dbColTypes.isEmpty()) {
                 createTable();
             }
 
@@ -751,13 +766,13 @@ public abstract class DbModel {
                 ArrayList<String> toRemove = new ArrayList<>();
 
                 for (String absent : absentDb) {
-                    if(absent.equals(ATTR_ID)){
+                    if (absent.equals(ATTR_ID)) {
                         toRemove.add(absent);
                         continue;
                     }
 
                     boolean created = createColumn(absent, attrs.get(absent));
-                    if(created) toRemove.add(absent);
+                    if (created) toRemove.add(absent);
                 }
 
                 absentDb.removeAll(toRemove);
@@ -813,13 +828,13 @@ public abstract class DbModel {
 
     public static DbDoc schemas() {
         DbDoc json = new DbDocImpl();
-        for (Map.Entry<String, Class<? extends DbModel>> e: CLASSES.entrySet()){
+        for (Map.Entry<String, Class<? extends DbModel>> e : CLASSES.entrySet()) {
             DbDoc attrJson = new DbDocImpl();
 
             try {
                 DbModel inst = e.getValue().newInstance();
                 attrJson = inst.getJsonSchema();
-                attrJson.add("plural", new JsonString(){{
+                attrJson.add("plural", new JsonString() {{
                     setValue(inst.getModelNamePlural());
                 }});
             } catch (Exception e1) {
@@ -831,17 +846,17 @@ public abstract class DbModel {
         return json;
     }
 
-    public DbDoc getJsonSchema(){
+    public DbDoc getJsonSchema() {
         DbDoc json = new DbDocImpl();
         DbDoc props = new DbDocImpl();
 
-        json.add("type", new JsonString(){{
+        json.add("type", new JsonString() {{
             setValue("object");
         }});
 
         json.add("properties", props);
 
-        for (Map.Entry<String, AttributeType> e: getResolvedAttributes().entrySet()){
+        for (Map.Entry<String, AttributeType> e : getResolvedAttributes().entrySet()) {
             props.add(e.getKey(), e.getValue().toJsonSchema());
         }
         return json;
@@ -857,15 +872,15 @@ public abstract class DbModel {
     public static class Where extends HashMap<String, String> {
         public static final Where EMPTY = new Where();
 
-        public Where(){
+        public Where() {
             super();
         }
 
-        public Where(String key, String value){
+        public Where(String key, String value) {
             put(key, value);
         }
 
-        public Where and(String key, String value){
+        public Where and(String key, String value) {
             put(key, value);
             return this;
         }

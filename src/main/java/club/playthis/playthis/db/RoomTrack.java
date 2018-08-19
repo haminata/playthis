@@ -2,7 +2,7 @@ package club.playthis.playthis.db;
 
 import java.util.HashMap;
 
-public class RoomTracks extends DbModel {
+public class RoomTrack extends DbModel {
 
     public static final String ATTR_ROOM_ID = "room_id";
     public static final String ATTR_TRACK_ID = "track_id"; // Track id
@@ -18,7 +18,7 @@ public class RoomTracks extends DbModel {
     }
 
     public Track getTrack(){
-        return Track.findById(Track.class, (Integer) getValue(ATTR_ADDED_BY));
+        return Track.findById(Track.class, (Integer) getValue(ATTR_TRACK_ID));
     }
 
     public Musicroom getMusicroom(){
@@ -35,7 +35,7 @@ public class RoomTracks extends DbModel {
     }
 
     public static void main(String[] args) {
-        new RoomTracks().syncTable();
+        new RoomTrack().syncTable();
     }
 
 }

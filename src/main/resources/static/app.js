@@ -12,6 +12,7 @@ class AppView extends React.Component {
         this.retryCount = {server: 0};
         this.models = {};
         this.tokens = null;
+        this.mainContentElem = React.createRef();
 
         this.state = {
             user: null,
@@ -89,14 +90,21 @@ class AppView extends React.Component {
             })
     }
 
-    play(spotify_uri) {
-        spotify_uri = spotify_uri || 'spotify:track:4eTgQdjd7bIet6d045GGUc'
-        return this.spotify('me/player/play', {uris: [spotify_uri]})
+    play(spotifyUri) {
+        if(spotifyUri && !_.startsWith(spotifyUri, 'spotify:track:')){
+            spotifyUri = `spotify:track:${spotifyUri}`
+        }
+        spotifyUri = spotifyUri || 'spotify:track:4eTgQdjd7bIet6d045GGUc'
+        return this.spotify('me/player/play', {uris: [spotifyUri]})
     }
 
-    pause(spotify_uri) {
-        spotify_uri = spotify_uri || 'spotify:track:4eTgQdjd7bIet6d045GGUc'
-        return this.spotify('me/player/pause', {uris: [spotify_uri]})
+    pause(spotifyUri) {
+        if(spotifyUri && !_.startsWith(spotifyUri, 'spotify:track:')){
+            spotifyUri = `spotify:track:${spotifyUri}`
+        }
+        spotifyUri = spotifyUri || 'spotify:track:4eTgQdjd7bIet6d045GGUc'
+
+        return this.spotify('me/player/pause', {uris: [spotifyUri]})
     }
 
     get spotifyPlayer() {
@@ -208,7 +216,7 @@ class AppView extends React.Component {
 
     render() {
         let style = {width: '100%', height: '100%'};
-        let mainContentStyle = {height: 'calc(100% - 50px)'};
+        let mainContentStyle = {height: 'calc(100% - 50px)', outline: 'none'};
 
         let mainContent;
         let mKey = 'maincontent_default'
@@ -236,7 +244,7 @@ class AppView extends React.Component {
         return e.div({style}, [
             e(Navbar, {key: 'navbar'}),
             e(Toolbar, {key: `toolbar ${placeholderSuffix}`, placeholder: `Search ${placeholderSuffix}`}),
-            e.div({style: mainContentStyle, key: mKey}, mainContent)
+            e.div({style: mainContentStyle, ref: this.mainContentElem, tabindex: 0, key: mKey}, mainContent)
         ])
     }
 
@@ -263,6 +271,13 @@ class AppView extends React.Component {
     }
 
     componentDidMount() {
+
+        let $elem = $(this.mainContentElem.current)
+        $elem.on('focusin', () => {
+            console.log('[focus#app]')
+            $(app.toolbar.dropdown.current).hide()
+        })
+
         window.app = this;
         this.initSpotify();
 

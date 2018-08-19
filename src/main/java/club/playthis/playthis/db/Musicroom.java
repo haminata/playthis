@@ -1,6 +1,9 @@
 package club.playthis.playthis.db;
 
+import club.playthis.playthis.Utils;
 import com.mysql.cj.xdevapi.DbDoc;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Musicroom extends DbModel {
@@ -53,4 +56,34 @@ public class Musicroom extends DbModel {
 
     }
 
+    public ArrayList<Track> getTracks() {
+        ArrayList<Track> tracks = new ArrayList<>();
+
+        if(getId() == null) return tracks;
+
+        ArrayList<RoomTrack> roomTracks = RoomTrack.findAll(RoomTrack.class, new Where() {{
+            put(RoomTrack.ATTR_ROOM_ID, getId().toString());
+        }});
+
+        for (RoomTrack rt : roomTracks) {
+            Track t = rt.getTrack();
+            if(t != null) tracks.add(t);
+        }
+        return tracks;
+    }
+
+    public RoomTrack addTrackById(Integer trackId) {
+        RoomTrack rt = RoomTrack.findOne(RoomTrack.class, new Where(){{
+            put(RoomTrack.ATTR_ROOM_ID, getId().toString());
+            put(RoomTrack.ATTR_TRACK_ID, trackId.toString());
+        }});
+        if(rt != null) return rt;
+
+        RoomTrack newRt = new RoomTrack();
+        newRt.update(new Utils.Json()
+                .add(RoomTrack.ATTR_TRACK_ID, trackId)
+                .add(RoomTrack.ATTR_ROOM_ID, getId()));
+        newRt.save();
+        return newRt;
+    }
 }
