@@ -17,7 +17,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.ws.rs.QueryParam;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -29,6 +28,13 @@ public class AppController {
 
     @GetMapping("/schemas")
     public String getSchema(){
+//        Authentication au = SecurityContextHolder.getContext().getAuthentication();
+//        if(au != null){
+//            WebAuthenticationDetails d = (WebAuthenticationDetails) au.getDetails();
+//
+//            System.out.println("[Authentication] " + au.getDetails());
+//        }
+//        else System.out.println("[Authentication] not user signed in!");
         return DbModel.schemas().toFormattedString();
     }
 

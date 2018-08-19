@@ -25,13 +25,23 @@ class AttributeType {
     public static final AttributeType CHARACTER = new AttributeType(DATA_TYPE_STRING, 1);
     public static final AttributeType DATE = new AttributeType(DATA_TYPE_DATE);
     public static final AttributeType INTEGER = new AttributeType(DATA_TYPE_INTEGER);
+    public static final AttributeType STRING_VIRTUAL = new AttributeType(DATA_TYPE_STRING, 128, true);
+    public static final AttributeType TEXT_VIRTUAL = new AttributeType(DATA_TYPE_STRING, TEXT.dataLength, true);
 
     public Integer dataLength;
     public String dataType;
+    public boolean isVirtual;
 
     public AttributeType(String attrType, Integer dataLength){
         this.dataLength = dataLength;
         this.dataType = attrType;
+        isVirtual = false;
+    }
+
+    public AttributeType(String attrType, Integer dataLength, boolean isVirtual){
+        this.dataLength = dataLength;
+        this.dataType = attrType;
+        this.isVirtual = isVirtual;
     }
 
     public AttributeType(String attrType){

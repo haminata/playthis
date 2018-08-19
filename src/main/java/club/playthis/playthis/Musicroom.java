@@ -1,10 +1,6 @@
 package club.playthis.playthis;
 
 import com.mysql.cj.xdevapi.DbDoc;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Musicroom extends DbModel {

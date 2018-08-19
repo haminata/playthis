@@ -3,7 +3,7 @@ package club.playthis.playthis;
 import com.mysql.cj.jdbc.exceptions.MysqlDataTruncation;
 import com.mysql.cj.xdevapi.*;
 
-import javax.sql.DataSource;
+import javax.validation.constraints.NotNull;
 import java.sql.*;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
@@ -318,8 +318,7 @@ public abstract class DbModel {
     }
 
     public void updateFromResultSet(ResultSet resultSet) throws SQLException {
-        for (Map.Entry<String, AttributeType> e :
-                getResolvedAttributes().entrySet()) {
+        for (Map.Entry<String, AttributeType> e : getResolvedAttributes(false).entrySet()) {
 
             if(e.getValue().isNumber()){
                 Integer val = resultSet.getInt(e.getKey());
@@ -373,12 +372,15 @@ public abstract class DbModel {
         StringBuilder cols = new StringBuilder();
         StringBuilder updates = new StringBuilder();
 
-        HashMap<String, AttributeType> attrs = getResolvedAttributes();
+        HashMap<String, AttributeType> attrs = getResolvedAttributes(false);
         HashMap<Integer, String> colIdxMap = new HashMap<>();
 
         int colIdx = 1;
-        for (String key : attrs.keySet()) {
-            if (key.equals(ATTR_ID)) continue;
+        for (Map.Entry<String, AttributeType> e : attrs.entrySet()) {
+            String key = e.getKey();
+            AttributeType attrType = e.getValue();
+
+            if (key.equals(ATTR_ID) || attrType.isVirtual) continue;
 
             qms.append('?');
             cols.append(key);
@@ -557,6 +559,13 @@ public abstract class DbModel {
         return models.isEmpty() ? null : models.get(0);
     }
 
+    public static <T extends DbModel> T findById(Class<T> entityClass, @NotNull Integer id){
+        ArrayList<T> models = find(entityClass, new Where(){{
+            put(ATTR_ID, id.toString());
+        }}, 1);
+        return models.isEmpty() ? null : models.get(0);
+    }
+
     public static <T extends DbModel> ArrayList<T> find(Class<T> entityClass, HashMap<String, String> where, Integer limit) {
         where = where == null ? Where.EMPTY : where;
         ArrayList<T> models = new ArrayList<>();
@@ -653,9 +662,22 @@ public abstract class DbModel {
      *
      * @return
      */
-    public HashMap<String, AttributeType> getResolvedAttributes(){
+    public HashMap<String, AttributeType> getResolvedAttributes(boolean includeVirtual){
         HashMap<String, AttributeType> attrs = getAttributes();
         attrs = attrs == null ? new HashMap<>() : attrs;
+
+        if(!includeVirtual){
+            ArrayList<String> virtualCols = new ArrayList<>();
+            for (Map.Entry<String, AttributeType> e :
+                    attrs.entrySet()) {
+                if(e.getValue().isVirtual) virtualCols.add(e.getKey());
+            }
+
+            for (String vCol : virtualCols) {
+                attrs.remove(vCol);
+            }
+        }
+
         attrs.put(ATTR_ID, AttributeType.INTEGER);
         attrs.put(ATTR_CREATED_AT, AttributeType.DATE);
         attrs.put(ATTR_UPDATED_AT, AttributeType.DATE);
@@ -665,13 +687,16 @@ public abstract class DbModel {
         return attrs;
     }
 
+    public HashMap<String, AttributeType> getResolvedAttributes(){
+        return getResolvedAttributes(true);
+    }
 
     /**
      * @return
      */
     public boolean syncTable() {
 
-        HashMap<String, AttributeType> attrs = getResolvedAttributes();
+        HashMap<String, AttributeType> attrs = getResolvedAttributes(false);
 
         Set<String> absentDb = ((HashMap<String, String>) attrs.clone()).keySet();
         Set<String> typeMismatch = ((HashMap<String, String>) attrs.clone()).keySet();

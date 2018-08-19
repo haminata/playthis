@@ -149,7 +149,7 @@ class Musicroom extends DbModel {
         app.musicroomView = this
         //app.setState({newMusicroom: this})
         //document.getElementById("form_create_musicroom").classList.remove('hidden')
-        if (this.isNew) app.getJson("/db/users").then((res) => {
+        if (this.isNew || this.state.editMode) app.getJson("/db/users").then((res) => {
             console.log('[load users]', res)
             this.setState({users: res.data || []})
         })
