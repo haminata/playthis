@@ -1,15 +1,17 @@
-package club.playthis.playthis;
+package club.playthis.playthis.db;
+
+import club.playthis.playthis.Utils;
 
 import java.util.HashMap;
 
 /**
  * Created by haminata on 26/07/2018.
  */
-public class Song extends DbModel {
+public class Track extends DbModel {
 
     @Override
     public String getModelNamePlural() {
-        return "Songs";
+        return "tracks";
     }
 
     @Override
@@ -23,7 +25,7 @@ public class Song extends DbModel {
     }
 
     public static void main(String[] args) {
-        Song s = new Song();
+        Track s = new Track();
         s.syncTable();
         s.update(new Utils.Json("title", "Shayo")
                 .add("artist_name", "Bigiano")

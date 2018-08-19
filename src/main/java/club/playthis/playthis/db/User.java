@@ -1,6 +1,8 @@
-package club.playthis.playthis;
+package club.playthis.playthis.db;
 
+import club.playthis.playthis.Utils;
 import com.mysql.cj.xdevapi.*;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -12,7 +14,7 @@ import java.util.HashMap;
  * Created by haminata on 23/06/2018.
  */
 
-class User extends DbModel {
+public class User extends DbModel {
 
     public static final String ATTR_SPOTIFY_ACCESSTOKEN = "spotify_accesstoken";
     public static final String ATTR_NAME = "name";
@@ -62,32 +64,10 @@ class User extends DbModel {
                 ", gender=" + getValue("gender") + ")";
     }
 
-    static class Accesstoken {
-        public String token, refreshToken, scope, tokenType;
-        public Date createdAt;
-        public Integer expiresIn;
-        public DbDoc raw;
-
-        public static Accesstoken fromString(String tokenStr){
-            DbDoc json = JsonParser.parseDoc(tokenStr);
-
-            Accesstoken tkn = new Accesstoken();
-            tkn.raw = json;
-            tkn.createdAt = Utils.extractDate(json,"created_at", null);
-            tkn.expiresIn = ((JsonNumber) json.get("expires_in")).getInteger();
-            tkn.token = ((JsonString) json.get("access_token")).getString();
-            tkn.refreshToken = ((JsonString) json.get("refresh_token")).getString();
-            tkn.tokenType = ((JsonString) json.get("token_type")).getString();
-            tkn.scope = ((JsonString) json.get("scope")).getString();
-
-            return tkn;
-        }
-    }
-
-    public Accesstoken spotifyAccesstoken() {
+    public AuthToken spotifyAccesstoken() {
         String tokenString = (String) getValue(ATTR_SPOTIFY_ACCESSTOKEN);
         if(tokenString == null) return null;
-        return Accesstoken.fromString(tokenString);
+        return AuthToken.fromString(tokenString);
     }
 
     public static void main(String[] args) {

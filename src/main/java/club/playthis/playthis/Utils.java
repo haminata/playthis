@@ -1,5 +1,6 @@
 package club.playthis.playthis;
 
+import club.playthis.playthis.db.DbModel;
 import com.mysql.cj.xdevapi.*;
 
 import java.io.*;

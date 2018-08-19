@@ -1,4 +1,4 @@
-package club.playthis.playthis;
+package club.playthis.playthis.client;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;

@@ -1,5 +1,6 @@
 package club.playthis.playthis;
 
+import club.playthis.playthis.db.DbModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.jaas.JaasGrantedAuthority;
@@ -21,21 +22,27 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
-        http
-                .authorizeRequests()
+        http.authorizeRequests()
                 .antMatchers("/",
                         "/ws",
                         "/components.js",
+                        "/registration.html",
+                        "/register",
                         "/app.js",
                         "/schemas",
                         "/spotify_token",
+                        "/spotify_login",
+                        "/spotify_callback",
+                        "/spotify_callback/",
                         "/dbmodel.js",
                         "/db/musicrooms",
                         "/db/users",
-                        "/db/songs",
+                        "/db/tracks",
                         "/lib.js",
-                        "/home").permitAll()
+                        "/home")
+                .permitAll()
                 .anyRequest()
+                //.permitAll()
                 .authenticated()
                 .and()
                 .formLogin()
@@ -53,8 +60,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
             @Override
             public UserDetails loadUserByUsername(String s) throws UsernameNotFoundException {
-                club.playthis.playthis.User user = club.playthis.playthis.User.findOne(club.playthis.playthis.User.class, new DbModel.Where() {{
-                    put(club.playthis.playthis.User.ATTR_NAME, s);
+                club.playthis.playthis.db.User user = club.playthis.playthis.db.User.findOne(club.playthis.playthis.db.User.class, new DbModel.Where() {{
+                    put(club.playthis.playthis.db.User.ATTR_NAME, s);
                 }});
                 System.out.println("[loadUserByUsername] username: " + s + ", user" + user);
                 if (user == null) {
@@ -70,7 +77,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
                 return User.builder()
                         .username(s)
-                        .password((String) user.getValue(club.playthis.playthis.User.ATTR_PASSWORD_HASH))
+                        .password((String) user.getValue(club.playthis.playthis.db.User.ATTR_PASSWORD_HASH))
                         .disabled(user.deletedAt != null)
                         .authorities(new GrantedAuthority() {
                             @Override

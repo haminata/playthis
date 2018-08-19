@@ -62,6 +62,10 @@ class Navbar extends React.Component {
         console.log('[Navbar] sign in')
     }
 
+    onSignUp() {
+        console.log('[Navbar] sign up')
+    }
+
     componentDidMount() {
         window.appNavbar = this
     }
@@ -98,7 +102,13 @@ class Navbar extends React.Component {
                 href: '/login',
                 className: 'btn btn-link my-2 my-sm-0 ml-2',
                 onClick: this.onSignIn.bind(this)
-            }, 'Sign In')
+            }, 'Sign In'),
+            e.span({className: 'text-muted'}, 'Or'),
+            e.a({
+                href: '/registration.html',
+                className: 'btn btn-link my-2 my-sm-0 ml-2',
+                onClick: this.onSignUp.bind(this)
+            }, 'Sign Up')
         ];
         return e.nav({className: 'nav navbar navbar-dark navbar-expand-sm bg-dark'}, e.div({className: 'container'}, children))
     }
@@ -149,7 +159,7 @@ class Toolbar extends React.Component {
 
     render() {
         let style = {}//{maxHeight: '78px'}
-        return e.div({className: "alert alert-warning rounded-0", style, role: "alert"}, [
+        return e.div({className: "alert rounded-0", style, id: 'toolbar', role: "alert"}, [
             e.div({className: 'container'}, [
                 e.div({className: 'input-group input-group-lg w-100', style: {position: 'relative'}}, [
                     e.span({className: 'input-group-prepend border-light'}, [
@@ -166,13 +176,13 @@ class Toolbar extends React.Component {
                         onChange: this.onChange.bind(this)
                     }),
                     e.div({
-                            className: 'border rounded shadow-lg p-3 mb-5 bg-white',
+                            className: 'border rounded shadow-lg p-3 bg-white',
                             style: {
                                 display: _.isEmpty(this.state.dropdownModels) ? 'none' : 'block',
                                 position: 'absolute',
                                 backgroundColor: 'white',
                                 width: '100%',
-                                top: 'calc(100% + 16px)',
+                                top: 'calc(100% + 4px)',
                                 maxHeight: '50vh',
                                 overflow: 'scroll',
                                 left: '0',
@@ -182,7 +192,7 @@ class Toolbar extends React.Component {
                         e(ModelCollection, {
                             modelsProps: this.state.dropdownModels || [],
                             viewFormat: VIEW_FORMAT.LIST_ITEM,
-                            model: Song,
+                            model: Track,
                             style: {
                                 width: '100%',
                             },

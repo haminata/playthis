@@ -1,4 +1,4 @@
-package club.playthis.playthis;
+package club.playthis.playthis.db;
 
 import com.mysql.cj.xdevapi.DbDoc;
 import java.util.HashMap;

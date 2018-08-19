@@ -1,9 +1,10 @@
-package club.playthis.playthis;
+package club.playthis.playthis.client;
 
+import club.playthis.playthis.Utils;
+import club.playthis.playthis.db.AuthToken;
+import club.playthis.playthis.db.DbModel;
 import com.mysql.cj.xdevapi.DbDoc;
-import com.mysql.cj.xdevapi.DbDocImpl;
 import com.mysql.cj.xdevapi.JsonParser;
-import com.mysql.cj.xdevapi.JsonString;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -40,18 +41,18 @@ public class AppController {
 
     @GetMapping("/spotify_token")
     public String getSpotify(){
-        User.Accesstoken tkn = User.findOne(User.class, new DbModel.Where(){{
+        AuthToken tkn = AuthToken.findOne(AuthToken.class, new DbModel.Where(){{
             put(DbModel.ATTR_ID, "1");
-        }}).spotifyAccesstoken();
+        }});
 
         if(tkn == null) return "{}";
-        return tkn.raw.toFormattedString();
+        return tkn.toJson().toFormattedString();
     }
 
     public static final String CLIENT_ID = "e3966e30011d4895997ce89c797de5a5";
 
     @GetMapping("/spotify_callback")
-    public String callback(@QueryParam("code") String code){
+    public ModelAndView callback(@QueryParam("code") String code){
         System.out.println("[Spotify] " + code);
 
         DbDoc body = null;
@@ -59,6 +60,7 @@ public class AppController {
         HttpClient httpClient = new DefaultHttpClient();
         //String clientId = "96cb241b6b2446cb8fd48b68f1493871";
         String clientSecret = Utils.readFile("src/main/resources/static/appsecret.txt").trim();
+        String queryResponse = "spotify_success";
 
         try {
             HttpPost request = new HttpPost("https://accounts.spotify.com/api/token");
@@ -82,30 +84,25 @@ public class AppController {
             String responseString = EntityUtils.toString(response.getEntity(), "UTF-8");
             body = JsonParser.parseDoc(responseString);
 
-            // handle response here...
-            User user = User.findOne(User.class, new DbModel.Where(){{
-                put(DbModel.ATTR_ID, "1");
-            }});
+            AuthToken tkn = AuthToken.fromString(responseString);
 
-            user.update(new DbDocImpl(){{
-                put(User.ATTR_SPOTIFY_ACCESSTOKEN, new JsonString(){{
-                    setValue(responseString);
-                }});
-            }});
-            user.save();
+            Integer userId = 1; // TODO - read current user id from session
+            tkn.update(new Utils.Json().add(AuthToken.ATTR_CREATED_BY, userId));
+            tkn.save();
+            queryResponse = "spotify_success";
         }catch (Exception ex) {
             // handle exception here
             ex.printStackTrace();
+            queryResponse = "spotify_error";
         } finally {
             httpClient.getConnectionManager().shutdown();
         }
 
         if(body != null){
             System.out.println("[response]" + body.toFormattedString());
-            return body.toFormattedString();
         }
 
-        return "OK";
+        return new ModelAndView("redirect:/?" + queryResponse);
     }
 
     @GetMapping("/spotify_login")
@@ -122,8 +119,11 @@ public class AppController {
                 "&client_id=" + CLIENT_ID + "&show_dialog=true" +
                 scopes + "&redirect_uri=" + rediretUri;
 
+        return new ModelAndView("redirect:" + url);
+    }
 
-        String fin = url;
-        return new ModelAndView("redirect:" + fin);
+    @GetMapping("/register")
+    public String register() {
+        return "registration.html";
     }
 }

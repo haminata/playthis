@@ -155,7 +155,7 @@ class Musicroom extends DbModel {
         })
 
         if(this.viewFormat === VIEW_FORMAT.FULL && !this.state.editMode) {
-            app.getJson("/db/songs").then((res) => {
+            app.getJson("/db/tracks").then((res) => {
                 console.log('[load songs]', res)
                 this.setState({songs: toCamelCase(res.data || [])})
             })
@@ -357,7 +357,7 @@ class Musicroom extends DbModel {
                 // e.div({className: "col-md-2"}, e.button({style, className: 'btn btn-dark pull-left', onClick: () => app.pause(this.trackId)}, 'Pause')),
             ]),
             e.br(),
-            e(ModelCollection, {modelsProps: songs, model: Song, viewFormat: VIEW_FORMAT.LIST_ITEM})
+            e(ModelCollection, {modelsProps: songs, model: Track, viewFormat: VIEW_FORMAT.LIST_ITEM})
         ])
     }
 
@@ -370,7 +370,7 @@ class Musicroom extends DbModel {
     }
 }
 
-class Song extends DbModel {
+class Track extends DbModel {
 
     render(){
 

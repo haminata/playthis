@@ -1,5 +1,7 @@
-package club.playthis.playthis;
+package club.playthis.playthis.db;
 
+import club.playthis.playthis.Utils;
+import club.playthis.playthis.client.WebsocketController;
 import com.mysql.cj.jdbc.exceptions.MysqlDataTruncation;
 import com.mysql.cj.xdevapi.*;
 
@@ -559,7 +561,9 @@ public abstract class DbModel {
         return models.isEmpty() ? null : models.get(0);
     }
 
-    public static <T extends DbModel> T findById(Class<T> entityClass, @NotNull Integer id){
+    public static <T extends DbModel> T findById(Class<T> entityClass, Integer id){
+        if(id == null) return null;
+
         ArrayList<T> models = find(entityClass, new Where(){{
             put(ATTR_ID, id.toString());
         }}, 1);
@@ -607,6 +611,8 @@ public abstract class DbModel {
                         throw new Exception("Unsupported attribute: type=\"" + e.getValue() + "\", value=\"" + value);
                 }
             }
+
+            query += " ORDER BY updated_at DESC";
 
             if (limit != null && limit > 0) query += " LIMIT " + limit;
 
@@ -848,7 +854,7 @@ public abstract class DbModel {
         }
     }
 
-    static class Where extends HashMap<String, String> {
+    public static class Where extends HashMap<String, String> {
         public static final Where EMPTY = new Where();
 
         public Where(){
@@ -873,8 +879,8 @@ public abstract class DbModel {
         Musicroom room = new Musicroom();
         room.syncTable();
 
-        //Song song = (new Song()).findOne(Song.class, Where.EMPTY);
-        //System.out.println("Song is: " + song);
+        //Track song = (new Track()).findOne(Track.class, Where.EMPTY);
+        //System.out.println("Track is: " + song);
     }
 }
 
