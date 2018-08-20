@@ -347,11 +347,15 @@ class Musicroom extends DbModel {
                 })
         }
         let className = 'card'
+        let joinTxt = 'text-warning'
 
         if(!this.state.createdBy){
             className += ' bg-secondary text-white'
         }else if(this.state.id <= 24 && this.state.id >= 16){
             className += ' text-white bg-info'
+        }else if(this.state.name === 'Test card'){
+            className += ' text-white bg-warning'
+            joinTxt = 'text-light'
         }else{
             className += ' text-white bg-success'
         }
@@ -370,9 +374,9 @@ class Musicroom extends DbModel {
                     className: 'close show-on-hover'
                 }, e.span({dangerouslySetInnerHTML: {__html: '&times;'}})),
                 e.h5({className: 'card-title', key}, this.state.name || 'No title'),
-                e.h6({className: 'card-subtitle mb-2 text-muted'}, `By ${this.createdBy.name}`),
+                e.h6({className: 'card-subtitle mb-2 text-black-50'}, `By ${this.createdBy.name}`),
                 e.p({className: 'card-text'}, this.state.description || 'No description'),
-                e.a({className: 'card-link text-white', href: '#', onClick: onJoinClick}, 'Join'),
+                e.a({className: 'card-link ' + joinTxt, href: '#', onClick: onJoinClick}, 'Join'),
                 e.a({className: 'card-link text-light', href: '#', onClick: onEditClick}, 'Edit'),
             ])
         ])
