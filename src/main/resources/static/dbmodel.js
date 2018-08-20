@@ -343,10 +343,15 @@ class Musicroom extends DbModel {
         let onDeleteRoom = () => {
             app.server.json("/delete_room", Object.assign({roomId: this.state.id}, this.state))
                 .then((res) => {
-                    console.log('[/delete_room] response:', res)
+                    let rooms = app.state.musicrooms
+                    console.log('[/delete_room] response:', res, rooms.length)
+                    _.remove(rooms, (r) => r.id === this.state.id)
+                    app.setState({musicrooms: rooms})
+                    console.log('[/rooms] response:', rooms.length)
                 })
         }
-        let className = 'card'
+
+        let className = 'card shadow'
         let joinTxt = 'text-warning'
 
         if(!this.state.createdBy){
@@ -470,6 +475,14 @@ class Track extends DbModel {
             app.musicroomView.setState({nowPlayingText: this.state.title})
         }
 
+        let onPause = () => {
+            let uri = this.state.uri || this.state.trackId
+            if (!uri) return
+            app.pause(uri)
+            app.musicroomView.setState({tradeId: uri})
+            app.musicroomView.setState({nowPlayingText: this.state.title + " (PAUSED)"})
+        }
+
         let onAddTrack = () => {
             app.musicroomView.addTrack(this.state);
         }
@@ -485,6 +498,7 @@ class Track extends DbModel {
 
         return e.div({}, [
             e.button({className: 'btn btn-outline-success pull-right', style: addBtnStyle, onClick: onAddTrack}, 'Add'),
+            e.button({className: 'btn btn-link btn-lg text-secondary pull-right', style: {}, onClick: onPause}, 'Pause'),
 
             e.button({className: 'btn btn-link btn-lg text-primary pull-right', onClick: onClick},
                 children

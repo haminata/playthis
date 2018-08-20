@@ -216,7 +216,7 @@ class AppView extends React.Component {
 
     render() {
         let style = {width: '100%', height: '100%'};
-        let mainContentStyle = {height: 'calc(100% - 50px)', outline: 'none', overflow: 'auto'};
+        let mainContentStyle = {height: 'calc(100% - 120px)', outline: 'none', overflow: 'auto'};
 
         let mainContent;
         let mKey = 'maincontent_default'

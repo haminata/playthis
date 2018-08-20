@@ -603,7 +603,7 @@ public abstract class DbModel {
             if (tableName == null)
                 throw new Exception("Table name can not be null: " + inst.getClass().getCanonicalName());
 
-            String query = "SELECT * FROM " + tableName;
+            String query = "SELECT * FROM " + tableName + " WHERE " + ATTR_DELETED_AT + " IS NULL";
 
             HashMap<String, AttributeType> attrs = inst.getResolvedAttributes();
 
@@ -611,8 +611,7 @@ public abstract class DbModel {
 
                 if (!where.containsKey(e.getKey())) continue;
 
-                if (query.endsWith(tableName) && !query.contains(" WHERE")) query += " WHERE";
-                if (query.contains("=")) query += " AND";
+                query += " AND";
 
                 String value = where.get(e.getKey());
                 switch (e.getValue().dataType) {
