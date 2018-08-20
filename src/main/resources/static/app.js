@@ -216,7 +216,7 @@ class AppView extends React.Component {
 
     render() {
         let style = {width: '100%', height: '100%'};
-        let mainContentStyle = {height: 'calc(100% - 50px)', outline: 'none'};
+        let mainContentStyle = {height: 'calc(100% - 50px)', outline: 'none', overflow: 'auto'};
 
         let mainContent;
         let mKey = 'maincontent_default'
@@ -244,7 +244,7 @@ class AppView extends React.Component {
         return e.div({style}, [
             e(Navbar, {key: 'navbar'}),
             e(Toolbar, {key: `toolbar ${placeholderSuffix}`, placeholder: `Search ${placeholderSuffix}`}),
-            e.div({style: mainContentStyle, ref: this.mainContentElem, tabindex: 0, key: mKey}, mainContent)
+            e.div({style: mainContentStyle, className: 'home', ref: this.mainContentElem, tabindex: 0, key: mKey}, mainContent)
         ])
     }
 
