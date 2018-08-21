@@ -212,7 +212,7 @@ class Musicroom extends DbModel {
                         type: 'text',
                         className: 'form-control',
                         name: 'room_name',
-                        value: this.state.name,
+                        defaultValue: this.state.name,
                         id: 'exampleInputEmail1',
                         placeholder: 'Haminata\'s House Party',
                         required: true
@@ -223,7 +223,7 @@ class Musicroom extends DbModel {
                     e.textarea({
                         className: 'form-control',
                         name: "room_description",
-                        value: this.state.description || '',
+                        defaultValue: this.state.description || '',
                         rows: "3",
                         id: 'exampleFormControlTextarea1',
                         onChange: this.onDescriptionChange.bind(this)
@@ -400,31 +400,31 @@ class Musicroom extends DbModel {
         let style = {width: '100px'}
         return e.div({className: 'music-play'}, [
 
-            e.div({className: 'container', tabIndex: 0, ref: this.container, style: {outline: 'none'}}, [
-                e.div({className: 'row'}, [
-                    e.div({className: "col-md-6 text-light"}, `Now Playing...${this.state.nowPlayingText || ''}`),
-
+            e.div({className: 'container', tabIndex: 0, ref: this.container, style: {outline: 'none', height: '100%'}}, [
+                e.div({className: 'row', style: {'width': '100%', marginRight: 0}}, [
+                    e.div({className: "col text-light"}, e.h4({className: 'mt-3'}, `Now Playing...${this.state.nowPlayingText || ''}`)),
+                    e.button({className: 'btn btn-warning pull-right my-2', style: {width: '150px', marginRight: '-15px'}, type: "button"}, [e.i({className: 'fa fa-picture-o'}), ' Upload Photo']),
 
                     // e.div({className: "col-md-6"}, e.input({value: this.trackId, placeholder: 'Enter Spotify track', className: 'form-control', onChange: this.onTrackIdChange.bind(this)})),
                     // e.div({className: "col-md-2"}, e.button({style, className: 'btn btn-success', onClick: () => app.play(this.trackId)}, 'Play')),
                     // e.div({className: "col-md-2"}, e.button({style, className: 'btn btn-dark pull-left', onClick: () => app.pause(this.trackId)}, 'Pause')),
                 ])]),
 
-            e.div({id: "carouselExampleIndicators", style: {maxHeight: '40vh'}, className:"carousel slide bg-dark", 'data-ride': "carousel"}, [
+            e.div({id: "carouselExampleIndicators", style: {maxHeight: '50vh', overflow: 'hidden', position: 'relative'}, className:"carousel slide bg-dark", 'data-ride': "carousel"}, [
                 e.div({className: 'carousel-indicators'}, [
                     e.li({className: 'active', 'data-target': "#carouselExampleIndicators", 'data-slide-to':"0"}),
                     e.li({className: '', 'data-target': "#carouselExampleIndicators", 'data-slide-to':"1"}),
                 ]),
                 e.div({className: 'carousel-inner', style: {width: '100%'}}, [
                     e.div({className: 'carousel-item active text-center', }, [
-                        e.img({src: 'http://houseparty.com/assets/img/og-image.jpg', alt: 'House Party'}),
+                        e.img({src: 'http://houseparty.com/assets/img/og-image.jpg',className:'shadow-lg' , alt: 'House Party'}),
                         e.div({className: 'carousel-caption d-none d-md-block'}, [
                             e.h5({}, 'A Nice Header'),
                             e.p({}, 'Some text')
                         ]),
                     ]),
                     e.div({className: 'carousel-item text-center', }, [
-                        e.img({src: 'https://cached.imagescaler.hbpl.co.uk/resize/scaleWidth/743/cached.offlinehbpl.hbpl.co.uk/news/OMC/spotify-640-20140402112233111.jpg', alt: 'House Party'}),
+                        e.img({className:'shadow-lg', src: 'https://cached.imagescaler.hbpl.co.uk/resize/scaleWidth/743/cached.offlinehbpl.hbpl.co.uk/news/OMC/spotify-640-20140402112233111.jpg', alt: 'House Party'}),
                         e.div({className: 'carousel-caption d-none d-md-block'}, [
                             e.h5({}, 'A Nice Header'),
                             e.p({}, 'Some text')
@@ -443,8 +443,8 @@ class Musicroom extends DbModel {
             ]),
 
             e.br(),
-            e.div({className: 'container', style: {overflow: 'scroll'}}, [
-                e(ModelCollection, {modelsProps: songs, model: Track, viewFormat: VIEW_FORMAT.LIST_ITEM}),
+            e.div({className: 'container', style: {overflow: 'scroll', minHeight: '50vh'}}, [
+                e(ModelCollection, {modelsProps: songs, model: Track, viewFormat: VIEW_FORMAT.LIST_ITEM, className: 'rounded border my-3 bg-white '}),
             ])
         ])
     }

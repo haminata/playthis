@@ -244,7 +244,7 @@ class AppView extends React.Component {
         return e.div({style}, [
             e(Navbar, {key: 'navbar'}),
             e(Toolbar, {key: `toolbar ${placeholderSuffix}`, placeholder: `Search ${placeholderSuffix}`}),
-            e.div({style: mainContentStyle, className: 'home', ref: this.mainContentElem, tabindex: 0, key: mKey}, mainContent)
+            e.div({style: mainContentStyle, className: 'home', ref: this.mainContentElem, tabIndex: 0, key: mKey}, mainContent)
         ])
     }
 

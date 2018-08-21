@@ -72,11 +72,18 @@ public class User extends DbModel {
 
     public static void main(String[] args) {
         new User().syncTable();
-        User s = User.findById(User.class, 2);
-        assert s != null;
+
+
+
+        User s = new User();
+
         //"{bcrypt}$2a$10$unwVIRGHe8UPuPFS0CwklOwFEQBn2vkJMC/rzeMcuwPizYagdwUne"
         s.update(new Utils.Json()
-                .add(ATTR_PASSWORD, "password"));
+                .add(ATTR_PASSWORD, "password")
+                .add(ATTR_NAME, "Hawa Camara")
+                .add("email", "hawa@gmail.net")
+                .add("gender", "F")
+        );
         s.save();
         System.out.println(s.values);
 //        System.out.println(User.all(User.class));
